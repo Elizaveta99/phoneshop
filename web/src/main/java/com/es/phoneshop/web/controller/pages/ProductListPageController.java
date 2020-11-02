@@ -1,6 +1,7 @@
 package com.es.phoneshop.web.controller.pages;
 
 import javax.annotation.Resource;
+import javax.sql.DataSource;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,6 +15,9 @@ import com.es.core.model.phone.PhoneDao;
 public class ProductListPageController {
     @Resource
     private PhoneDao phoneDao;
+
+    @Resource
+    private DataSource dataSource;
 
     @RequestMapping(method = RequestMethod.GET)
     public String showProductList(Model model) {

@@ -1,11 +1,15 @@
 package com.es.core.model.phone;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -15,12 +19,24 @@ import java.util.*;
 
 @Component
 public class JdbcPhoneDao implements PhoneDao {
-    @Resource
+    //@Resource
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    public void setDataSource(DataSource dataSource) {
+        jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
     public Optional<Phone> get(final Long key) {
-        String sql = "select * from phones p, phone2color pc, colors c where p.id = ? and pc.phoneId = p.id and c.id = pc.colorId";
-        Phone foundPhone = jdbcTemplate.queryForObject(sql, new Object[]{key}, new PhoneMapper());
+        String sql;
+        Phone foundPhone;
+        try {
+            sql = "select * from phones p, phone2color pc, colors c where p.id = ? and pc.phoneId = p.id and c.id = pc.colorId";
+            foundPhone = jdbcTemplate.queryForObject(sql, new Object[]{key}, new PhoneMapper());
+        } catch (EmptyResultDataAccessException e) {
+            sql = "select * from phones p where p.id = ?";
+            foundPhone = jdbcTemplate.queryForObject(sql, new Object[]{key}, new BeanPropertyRowMapper<>(Phone.class));
+        }
         return Optional.ofNullable(foundPhone);
     }
 
@@ -28,8 +44,12 @@ public class JdbcPhoneDao implements PhoneDao {
         jdbcTemplate.update("delete from phones where id = ?",
                 phone.getId());
         jdbcTemplate.update(
-                "insert into phones (id, brand, model, price, displaySizeInches, weightGr, lengthMm, widthMm, heightMm, announced, deviceType, os, displayResolution, pixelDensity, displayTechnology, backCameraMegapixels, frontCameraMegapixels, ramGb, internalStorageGb, batteryCapacityMah, talkTimeHours, standByTimeHours, bluetooth, positioning, imageUrl, description) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                8764L, "ARCHOSS", "ARCHOS 101 G9", null, 10.1, 482, 276.0, 167.0, 12.6, null, "Tablet", "Android (4.0)", "1280 x  800", 149, null, null, 1.3, null, 8.0, null, null, null, "2.1, EDR", "GPS", "manufacturer/ARCHOS/ARCHOS 101 G9.jpg", "The ARCHOS 101 G9 is a 10.1'''' tablet, equipped with Google''s open source OS. It offers a multi-core ARM CORTEX A9 processor at 1GHz, 8 or 16GB internal memory, microSD card slot, GPS, Wi-Fi, Bluetooth 2.1, and more.");
+                "insert into phones (id, brand, model, price, displaySizeInches, weightGr, lengthMm, widthMm, heightMm, announced, deviceType, os, displayResolution, pixelDensity, displayTechnology, backCameraMegapixels, frontCameraMegapixels, ramGb, internalStorageGb, batteryCapacityMah, talkTimeHours, standByTimeHours, bluetooth, positioning, imageUrl, description) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", phone.getId(), phone.getBrand(), phone.getModel(), phone.getPrice(), phone.getDisplaySizeInches(), phone.getWeightGr(), phone.getLengthMm(), phone.getWidthMm(), phone.getHeightMm(), phone.getAnnounced(), phone.getDeviceType(), phone.getOs(), phone.getDisplayResolution(), phone.getPixelDensity(), phone.getDisplayTechnology(), phone.getBackCameraMegapixels(), phone.getFrontCameraMegapixels(), phone.getRamGb(), phone.getInternalStorageGb(), phone.getBatteryCapacityMah(), phone.getTalkTimeHours(), phone.getStandByTimeHours(), phone.getBluetooth(), phone.getPositioning(), phone.getImageUrl(), phone.getDescription());
+
+        if (phone.getColors().size() > 0) {
+            phone.getColors().forEach(c -> jdbcTemplate.update("insert into phone2color (phoneId, colorId) values (?, ?)",
+                    phone.getId(), c.getId()));
+        }
 
     }
 
@@ -53,10 +73,11 @@ public class JdbcPhoneDao implements PhoneDao {
         if (phone == null) {
             phone = new Phone();
             phone.setColors(new HashSet<>());
+            phone.setId(Long.valueOf(rs.getString("id")));
             phone.setBrand(rs.getString("brand"));
             phone.setModel(rs.getString("model"));
             phone.setPrice(getBigDecimalValue(rs, "price"));
-            phone.setDisplaySizeInches(new BigDecimal(rs.getString("displaySizeInches")));
+            phone.setDisplaySizeInches(getBigDecimalValue(rs, "displaySizeInches"));
             phone.setWeightGr(getIntegerValue(rs,"weightGr"));
             phone.setLengthMm(getBigDecimalValue(rs, "lengthMm"));
             phone.setWidthMm(getBigDecimalValue(rs, "widthMm"));

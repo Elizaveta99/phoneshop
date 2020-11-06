@@ -4,26 +4,29 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.annotation.Resource;
-import javax.sql.DataSource;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"applicationContext-test.xml"})
+@ContextConfiguration(locations = {"classpath:applicationContext-test.xml"})
 public class JdbcPhoneDaoIntTest {
 
     @Autowired
     private JdbcPhoneDao phoneDao;
 
     @Resource
-    private DataSource dataSourceTest;
+    private DriverManagerDataSource dataSourceTest;
 
     @Before
     public void setUp() {
@@ -33,22 +36,23 @@ public class JdbcPhoneDaoIntTest {
     @Test
     public void getWithColorsTestOk() {
         Phone phone = phoneDao.get(1011L).get();
-        assertTrue(phone.getBrand().equals("ARCHOS") && phone.getModel().equals("ARCHOS 40 Cesium"));
+        assertEquals("ARCHOS", phone.getBrand());
+        assertEquals("ARCHOS 40 Cesium", phone.getModel());
     }
 
     @Test
     public void getWithoutColorsTestOk() {
         Phone phone = phoneDao.get(1003L).get();
-        assertTrue(phone.getBrand().equals("ARCHOS") && phone.getModel().equals("ARCHOS 101 Oxygen"));
+        assertEquals("ARCHOS", phone.getBrand());
+        assertEquals("ARCHOS 101 Oxygen", phone.getModel());
     }
 
     @Test
     public void findAllTestOk() {
         List<Long> expectedIds = Arrays.asList(1000L, 1001L);
-        List<Phone> actualPhones = phoneDao.findAll(0, 2);
-        List<Long> actualIds = new ArrayList<>();
-        actualPhones.stream().map(Phone::getId).forEach(actualIds::add);
-
+        List<Long> actualIds = phoneDao.findAll(0, 2).stream()
+                .map(Phone::getId)
+                .collect(Collectors.toList());
         assertEquals(expectedIds, actualIds);
     }
 
@@ -67,21 +71,12 @@ public class JdbcPhoneDaoIntTest {
         phoneDao.save(phone);
 
         Phone actualPhone = phoneDao.get(phone.getId()).get();
-        assertTrue(actualPhone.getBrand().equals("ARCHOSS") && actualPhone.getModel().equals("ARCHOS 101 G99"));
-    }
+        assertEquals("ARCHOSS", actualPhone.getBrand());
+        assertEquals("ARCHOS 101 G99", actualPhone.getModel());
 
-    @Test
-    @Rollback
-    public void saveTestWithoutColorsOk() {
-        Phone phone = new Phone();
-        phone.setId(8764L);
-        phone.setBrand("ARCHOSS");
-        phone.setModel("ARCHOS 101 G999");
-
-        phoneDao.save(phone);
-
-        Phone actualPhone = phoneDao.get(phone.getId()).get();
-        assertTrue(actualPhone.getBrand().equals("ARCHOSS") && actualPhone.getModel().equals("ARCHOS 101 G999"));
+        List<Long> expectedColorsIds = colors.stream().map(Color::getId).sorted().collect(Collectors.toList());
+        List<Long> actualColorsIds = actualPhone.getColors().stream().map(Color::getId).sorted().collect(Collectors.toList());
+        assertEquals(expectedColorsIds, actualColorsIds);
     }
 
 }

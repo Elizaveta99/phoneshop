@@ -1,122 +1,97 @@
 package com.es.core.model.phone;
 
+import org.apache.commons.beanutils.BeanMap;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.stereotype.Component;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
-import javax.annotation.Resource;
-import javax.sql.DataSource;
-import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
-@Component
 public class JdbcPhoneDao implements PhoneDao {
-    //@Resource
-    private JdbcTemplate jdbcTemplate;
 
-    @Autowired
-    public void setDataSource(DataSource dataSource) {
-        jdbcTemplate = new JdbcTemplate(dataSource);
+    private final String sqlGet = "select * from phones p left join phone2color pc on p.id = pc.phoneId left join colors c on pc.colorId = c.id where p.id = :p.id";
+    private final String sqlInsert = "insert into phones (id, brand, model, price, displaySizeInches, weightGr, lengthMm, widthMm, heightMm, announced, deviceType, os, displayResolution, pixelDensity, displayTechnology, backCameraMegapixels, frontCameraMegapixels, ramGb, internalStorageGb, batteryCapacityMah, talkTimeHours, standByTimeHours, bluetooth, positioning, imageUrl, description) values (:id, :brand, :model, :price, :displaySizeInches, :weightGr, :lengthMm, :widthMm, :heightMm, :announced, :deviceType, :os, :displayResolution, :pixelDensity, :displayTechnology, :backCameraMegapixels, :frontCameraMegapixels, :ramGb, :internalStorageGb, :batteryCapacityMah, :talkTimeHours, :standByTimeHours, :bluetooth, :positioning, :imageUrl, :description)";
+    private final String sqlIfExist = "select count(*) from phones where id = :id";
+    private final String sqlAllIds = "select id from phones offset :offset limit :limit";
+    private final String sqlUpdate = "update phones set brand = :brand, model = :model, price = :price, displaySizeInches = :displaySizeInches, weightGr = :weightGr, lengthMm = :lengthMm, widthMm = :widthMm, heightMm = :heightMm, announced = :announced, deviceType = :deviceType, os = :os, displayResolution = :displayResolution, pixelDensity = :pixelDensity, displayTechnology = :displayTechnology, backCameraMegapixels = :backCameraMegapixels, frontCameraMegapixels = :frontCameraMegapixels, ramGb = :ramGb, internalStorageGb = :internalStorageGb, batteryCapacityMah = :batteryCapacityMah, talkTimeHours = :talkTimeHours, standByTimeHours = :standByTimeHours, bluetooth = :bluetooth, positioning = :positioning, imageUrl = :imageUrl, description = :description where id = :id";
+    private final String sqlDeleteColors = "delete from phone2color pc where pc.phoneId = :id";
+    private final String sqlInsertColors = "insert into phone2color (phoneId, colorId) values (:phoneId, :colorId)";
+
+    private NamedParameterJdbcTemplate jdbcTemplate;
+    private List<String> attributesList;
+    private PhoneRowMapper phoneRowMapper;
+
+    public void setPhoneRowMapper(PhoneRowMapper phoneRowMapper) {
+        this.phoneRowMapper = phoneRowMapper;
     }
 
+    public void setAttributesList(List<String> attributesList) {
+        this.attributesList = attributesList;
+    }
+
+    @Autowired
+    public void setDataSource(DriverManagerDataSource dataSource) {
+        jdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
+    }
+
+    @Override
     public Optional<Phone> get(final Long key) {
-        String sql;
         Phone foundPhone;
         try {
-            sql = "select * from phones p, phone2color pc, colors c where p.id = ? and pc.phoneId = p.id and c.id = pc.colorId";
-            foundPhone = jdbcTemplate.queryForObject(sql, new Object[]{key}, new PhoneMapper());
+            SqlParameterSource namedParameters = new MapSqlParameterSource("p.id", key);
+            foundPhone = jdbcTemplate.queryForObject(sqlGet, namedParameters, phoneRowMapper);
         } catch (EmptyResultDataAccessException e) {
-            sql = "select * from phones p where p.id = ?";
-            foundPhone = jdbcTemplate.queryForObject(sql, new Object[]{key}, new BeanPropertyRowMapper<>(Phone.class));
+            return Optional.empty();
         }
         return Optional.ofNullable(foundPhone);
     }
 
+    @Override
     public void save(final Phone phone) {
-        jdbcTemplate.update("delete from phones where id = ?",
-                phone.getId());
-        jdbcTemplate.update(
-                "insert into phones (id, brand, model, price, displaySizeInches, weightGr, lengthMm, widthMm, heightMm, announced, deviceType, os, displayResolution, pixelDensity, displayTechnology, backCameraMegapixels, frontCameraMegapixels, ramGb, internalStorageGb, batteryCapacityMah, talkTimeHours, standByTimeHours, bluetooth, positioning, imageUrl, description) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", phone.getId(), phone.getBrand(), phone.getModel(), phone.getPrice(), phone.getDisplaySizeInches(), phone.getWeightGr(), phone.getLengthMm(), phone.getWidthMm(), phone.getHeightMm(), phone.getAnnounced(), phone.getDeviceType(), phone.getOs(), phone.getDisplayResolution(), phone.getPixelDensity(), phone.getDisplayTechnology(), phone.getBackCameraMegapixels(), phone.getFrontCameraMegapixels(), phone.getRamGb(), phone.getInternalStorageGb(), phone.getBatteryCapacityMah(), phone.getTalkTimeHours(), phone.getStandByTimeHours(), phone.getBluetooth(), phone.getPositioning(), phone.getImageUrl(), phone.getDescription());
+        SqlParameterSource namedParameters = new MapSqlParameterSource("id", phone.getId());
+        Map<String,Object> namedParametersMap;
 
-        if (phone.getColors().size() > 0) {
-            phone.getColors().forEach(c -> jdbcTemplate.update("insert into phone2color (phoneId, colorId) values (?, ?)",
-                    phone.getId(), c.getId()));
+        boolean isExist = jdbcTemplate.queryForObject(sqlIfExist, namedParameters, Integer.class) > 0;
+        if (isExist) {
+            namedParametersMap = getNamedParametersMapWithoutColors(phone);
+            if (phone.getColors().size() > 0) {
+                jdbcTemplate.update(sqlDeleteColors, namedParameters);
+            }
+            jdbcTemplate.update(sqlUpdate, namedParametersMap);
+        } else {
+            namedParametersMap = getNamedParametersMapWithoutColors(phone);
+            jdbcTemplate.update(sqlInsert, namedParametersMap);
         }
-
+        namedParametersMap.put("phoneId", phone.getId());
+        for (Color color: phone.getColors()) {
+            namedParametersMap.put("colorId", color.getId());
+            jdbcTemplate.update(sqlInsertColors, namedParametersMap);
+        }
     }
 
+    private Map<String, Object> getNamedParametersMapWithoutColors(Phone phone) {
+        Map<String,Object> namedParametersMap = new HashMap<>();
+        BeanMap beanMapPhone = new BeanMap(phone);
+        for (String key: attributesList) {
+            namedParametersMap.put(key, beanMapPhone.get(key));
+        }
+        return namedParametersMap;
+    }
+
+    @Override
     public List<Phone> findAll(int offset, int limit) {
-        return jdbcTemplate.query("select * from phones offset ? limit ?", new Object[]{offset, limit},
-                new BeanPropertyRowMapper<>(Phone.class));
-    }
-
-    private static final class PhoneMapper implements RowMapper<Phone> {
-
-        public Phone mapRow(ResultSet rs, int rowNum) throws SQLException {
-            Phone phone = populatePhone(rs, null);
-            while(rs.next()) {
-                phone = populatePhone(rs, phone);
-            }
-            return phone;
+        Map<String, Integer> namedParametersMap = new HashMap<String, Integer>() {{
+                put("offset", offset);
+                put("limit", limit);
+        }};
+        List<Long> ids = jdbcTemplate.queryForList(sqlAllIds, namedParametersMap, Long.class);
+        List<Phone> phones = new ArrayList<>();
+        for (Long id:ids) {
+            phones.add(get(id).get());
         }
+        return phones;
     }
-
-    private static Phone populatePhone(ResultSet rs, Phone phone) throws SQLException {
-        if (phone == null) {
-            phone = new Phone();
-            phone.setColors(new HashSet<>());
-            phone.setId(Long.valueOf(rs.getString("id")));
-            phone.setBrand(rs.getString("brand"));
-            phone.setModel(rs.getString("model"));
-            phone.setPrice(getBigDecimalValue(rs, "price"));
-            phone.setDisplaySizeInches(getBigDecimalValue(rs, "displaySizeInches"));
-            phone.setWeightGr(getIntegerValue(rs,"weightGr"));
-            phone.setLengthMm(getBigDecimalValue(rs, "lengthMm"));
-            phone.setWidthMm(getBigDecimalValue(rs, "widthMm"));
-            phone.setHeightMm(getBigDecimalValue(rs, "heightMm"));
-            try {
-                phone.setAnnounced(rs.getString("announced") == null ? null : (new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss")).parse(rs.getString("announced"))); // ??
-            } catch (ParseException e) {
-                throw new RuntimeException(); // temporarily
-            }
-            phone.setDeviceType(rs.getString("deviceType"));
-            phone.setOs(rs.getString("os"));
-            phone.setDisplayResolution(rs.getString("displayResolution"));
-            phone.setPixelDensity(getIntegerValue(rs,"pixelDensity"));
-            phone.setDisplayTechnology(rs.getString("displayTechnology"));
-            phone.setBackCameraMegapixels(getBigDecimalValue(rs, "backCameraMegapixels"));
-            phone.setFrontCameraMegapixels(getBigDecimalValue(rs, "frontCameraMegapixels"));
-            phone.setRamGb(getBigDecimalValue(rs, "ramGb"));
-            phone.setInternalStorageGb(getBigDecimalValue(rs, "frontCameraMegapixels"));
-            phone.setBatteryCapacityMah(getIntegerValue(rs,"batteryCapacityMah"));
-            phone.setTalkTimeHours(getBigDecimalValue(rs, "talkTimeHours"));
-            phone.setStandByTimeHours(getBigDecimalValue(rs, "standByTimeHours"));
-            phone.setBluetooth(rs.getString("bluetooth"));
-            phone.setPositioning(rs.getString("positioning"));
-            phone.setImageUrl(rs.getString("imageUrl"));
-            phone.setDescription(rs.getString("description"));
-        }
-        Color color = new Color();
-        color.setId(Long.valueOf(rs.getString("id")));
-        color.setCode(rs.getString("code"));
-        phone.getColors().add(color);
-        return phone;
-    }
-
-    private static BigDecimal getBigDecimalValue(ResultSet rs, String column) throws SQLException {
-        return rs.getString(column) == null ? BigDecimal.ZERO : new BigDecimal(rs.getString(column));
-    }
-
-    private static Integer getIntegerValue(ResultSet rs, String column) throws SQLException {
-        return rs.getString(column) == null ? 0 : Integer.parseInt(rs.getString(column));
-    }
-
 }

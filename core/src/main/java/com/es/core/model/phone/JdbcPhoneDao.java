@@ -1,5 +1,6 @@
 package com.es.core.model.phone;
 
+import com.es.core.model.exception.ItemNotFoundException;
 import org.apache.commons.beanutils.BeanMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -15,10 +16,19 @@ public class JdbcPhoneDao implements PhoneDao {
     private final String sqlGet = "select * from phones p left join phone2color pc on p.id = pc.phoneId left join colors c on pc.colorId = c.id where p.id = :p.id";
     private final String sqlInsert = "insert into phones (id, brand, model, price, displaySizeInches, weightGr, lengthMm, widthMm, heightMm, announced, deviceType, os, displayResolution, pixelDensity, displayTechnology, backCameraMegapixels, frontCameraMegapixels, ramGb, internalStorageGb, batteryCapacityMah, talkTimeHours, standByTimeHours, bluetooth, positioning, imageUrl, description) values (:id, :brand, :model, :price, :displaySizeInches, :weightGr, :lengthMm, :widthMm, :heightMm, :announced, :deviceType, :os, :displayResolution, :pixelDensity, :displayTechnology, :backCameraMegapixels, :frontCameraMegapixels, :ramGb, :internalStorageGb, :batteryCapacityMah, :talkTimeHours, :standByTimeHours, :bluetooth, :positioning, :imageUrl, :description)";
     private final String sqlIfExist = "select count(*) from phones where id = :id";
-    private final String sqlAllIds = "select id from phones offset :offset limit :limit";
+    private final String sqlAllIds = "select id from (select id from phones p left join stocks s on p.id = s.phoneId where s.stock - s.reserved > 0) offset :offset limit :limit";
     private final String sqlUpdate = "update phones set brand = :brand, model = :model, price = :price, displaySizeInches = :displaySizeInches, weightGr = :weightGr, lengthMm = :lengthMm, widthMm = :widthMm, heightMm = :heightMm, announced = :announced, deviceType = :deviceType, os = :os, displayResolution = :displayResolution, pixelDensity = :pixelDensity, displayTechnology = :displayTechnology, backCameraMegapixels = :backCameraMegapixels, frontCameraMegapixels = :frontCameraMegapixels, ramGb = :ramGb, internalStorageGb = :internalStorageGb, batteryCapacityMah = :batteryCapacityMah, talkTimeHours = :talkTimeHours, standByTimeHours = :standByTimeHours, bluetooth = :bluetooth, positioning = :positioning, imageUrl = :imageUrl, description = :description where id = :id";
     private final String sqlDeleteColors = "delete from phone2color pc where pc.phoneId = :id";
     private final String sqlInsertColors = "insert into phone2color (phoneId, colorId) values (:phoneId, :colorId)";
+    private final String sqlSearchIds = "select id from (select id from phones p left join stocks s on p.id = s.phoneId where s.stock - s.reserved > 0 and p.model like '%'||:model||'%') offset :offset limit :limit";
+    private final String sqlSortPriceAscIds = "select id from (select id from phones p left join stocks s on p.id = s.phoneId where s.stock - s.reserved > 0 and p.model like '%'||:model||'%' order by price asc) offset :offset limit :limit";
+    private final String sqlSortDisplaySizeAscIds = "select id from (select id from phones p left join stocks s on p.id = s.phoneId where s.stock - s.reserved > 0 and p.model like '%'||:model||'%' order by displaySizeInches asc) offset :offset limit :limit";
+    private final String sqlSortAscIds = "select id from (select id from phones p left join stocks s on p.id = s.phoneId where s.stock - s.reserved > 0 and p.model like '%'||:model||'%' order by :sort asc) offset :offset limit :limit";
+    private final String sqlSortDescIds = "select id from (select id from phones p left join stocks s on p.id = s.phoneId where s.stock - s.reserved > 0 and p.model like '%'||:model||'%' order by :sort desc) offset :offset limit :limit";
+    private final String sqlSortPriceDescIds = "select id from (select id from phones p left join stocks s on p.id = s.phoneId where s.stock - s.reserved > 0 and p.model like '%'||:model||'%' order by price desc) offset :offset limit :limit";
+    private final String sqlSortDisplaySizeDescIds = "select id from (select id from phones p left join stocks s on p.id = s.phoneId where s.stock - s.reserved > 0 and p.model like '%'||:model||'%' order by displaySizeInches desc) offset :offset limit :limit";
+    private final String sqlGetStock = "select s.stock from phones p left join stocks s on p.id = s.phoneId where p.id = :id";
+
 
     private NamedParameterJdbcTemplate jdbcTemplate;
     private List<String> attributesList;
@@ -44,9 +54,18 @@ public class JdbcPhoneDao implements PhoneDao {
             SqlParameterSource namedParameters = new MapSqlParameterSource("p.id", key);
             foundPhone = jdbcTemplate.queryForObject(sqlGet, namedParameters, phoneRowMapper);
         } catch (EmptyResultDataAccessException e) {
-            return Optional.empty();
+            throw new ItemNotFoundException();
         }
-        return Optional.ofNullable(foundPhone);
+        if (!Optional.ofNullable(foundPhone).isPresent()) {
+            throw new ItemNotFoundException();
+        }
+        return Optional.of(foundPhone);
+    }
+
+    @Override
+    public int getStock(Long key) {
+        SqlParameterSource namedParameters = new MapSqlParameterSource("id", key);
+        return jdbcTemplate.queryForObject(sqlGetStock, namedParameters, Integer.class);
     }
 
     @Override
@@ -82,16 +101,45 @@ public class JdbcPhoneDao implements PhoneDao {
     }
 
     @Override
-    public List<Phone> findAll(int offset, int limit) {
-        Map<String, Integer> namedParametersMap = new HashMap<String, Integer>() {{
+    public List<Phone> findAll(int offset, int limit, String queryProduct, String sortField, String sortOrder) {
+        Map<String, Object> namedParametersMap = new HashMap<String, Object>() {{
                 put("offset", offset);
                 put("limit", limit);
+                put("model", queryProduct);
+                put("sort", sortField);
+                put("order", sortOrder);
         }};
-        List<Long> ids = jdbcTemplate.queryForList(sqlAllIds, namedParametersMap, Long.class);
+        List<Long> ids = jdbcTemplate.queryForList(getQuery(queryProduct, sortField, sortOrder), namedParametersMap, Long.class);
         List<Phone> phones = new ArrayList<>();
         for (Long id:ids) {
             phones.add(get(id).get());
         }
         return phones;
+    }
+
+    private String getQuery(String queryProduct, String sortField, String sortOrder) {
+        String queryForIds;
+        if (!sortField.equals("")) {
+            if (sortOrder.equals("asc")) {
+                if (sortField.equals("price")) {
+                    queryForIds = sqlSortPriceAscIds;
+                } else if (sortField.equals("displaySize")) {
+                    queryForIds = sqlSortDisplaySizeAscIds;
+                } else
+                    queryForIds = sqlSortAscIds;
+            } else {
+                if (sortField.equals("price")) {
+                    queryForIds = sqlSortPriceDescIds;
+                } else if (sortField.equals("displaySize")) {
+                    queryForIds = sqlSortDisplaySizeDescIds;
+                } else
+                    queryForIds = sqlSortDescIds;
+            }
+        } else if (!queryProduct.equals("")) {
+            queryForIds = sqlSearchIds;
+        } else {
+            queryForIds = sqlAllIds;
+        }
+        return queryForIds;
     }
 }

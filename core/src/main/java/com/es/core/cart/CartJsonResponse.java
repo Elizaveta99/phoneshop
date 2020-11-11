@@ -2,29 +2,29 @@ package com.es.core.cart;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 
-public class Cart implements Serializable {
-    private List<CartItem> items;
+public class CartJsonResponse {
+
+    private boolean validated;
+    private Map<String, String> errorMessages;
     private Long totalQuantity;
     private BigDecimal totalCost;
 
-    public Cart () {
-        this.items = new ArrayList<>();
+    public boolean isValidated() {
+        return validated;
     }
 
-    public List<CartItem> getItems() {
-        return items;
+    public void setValidated(boolean validated) {
+        this.validated = validated;
     }
 
-    public void setItems(List<CartItem> items) {
-        this.items = items;
+    public Map<String, String> getErrorMessages() {
+        return errorMessages;
     }
 
-    @Override
-    public String toString() {
-        return items.toString();
+    public void setErrorMessages(Map<String, String> errorMessages) {
+        this.errorMessages = errorMessages;
     }
 
     public Long getTotalQuantity() {

@@ -7,8 +7,8 @@ import java.util.List;
 
 public class Cart implements Serializable {
     private List<CartItem> items;
-    private Long totalQuantity;
-    private BigDecimal totalCost;
+    private Long totalQuantity = 0L;
+    private BigDecimal totalCost = BigDecimal.ZERO;
 
     public Cart () {
         this.items = new ArrayList<>();

@@ -12,49 +12,6 @@
             src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"></script>
     <script
             src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
-
-  <script type="text/javascript">
-    $(document).ready(function() {
-      /*  Submit form using Ajax */
-      $('#phoneForm').submit(function(e) {
-
-        //Prevent default submission of form
-        e.preventDefault();
-        ajaxPost();
-      });
-
-      function ajaxPost() {
-
-        var formData = {
-          quantity: $('#quantity').val(),
-          phoneId: $('#phoneId').val(),
-        }
-
-        $.post({
-          contentType : 'application/json',
-          url : $('#phoneForm').attr( 'action'),
-          data : JSON.stringify(formData),
-          dataType : 'application/json',
-          beforeSend: function(xhr) {
-            xhr.setRequestHeader("Accept", "application/json");
-            xhr.setRequestHeader("Content-Type", "application/json");
-          },
-          success : function(res) {
-            if(res.validated) {
-              $('#resultContainer').text(JSON.stringify(res.totalQuantity));
-              $('#resultContainer').show();
-            }
-            else {
-              //Set error messages
-              $.each(res.errorMessages, function(key,value){
-                $('input[name='+key+']').after('<span class="error">'+value+'</span>');
-              });
-            }
-          }
-        });
-      }
-    });
-  </script>
 </head>
 
 <body class="product-list">
@@ -67,12 +24,9 @@
           </a>
         </h1>
       </div>
-      <div class="float-right">
-        <h1>
-          <a href="${pageContext.servletContext.contextPath}/cart">
-            Cart:
-          </a>
-        </h1>
+      <jsp:include page="${pageContext.servletContext.contextPath}/ajaxCart" />
+      <div id="resultContainer" class="float-right">
+        <h1></h1>
       </div>
       <br>
       <br>

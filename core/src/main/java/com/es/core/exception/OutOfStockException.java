@@ -1,4 +1,4 @@
-package com.es.core.model.exception;
+package com.es.core.exception;
 
 import com.es.core.model.phone.Phone;
 

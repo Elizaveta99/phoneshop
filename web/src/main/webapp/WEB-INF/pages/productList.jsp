@@ -5,11 +5,65 @@
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 
 <tags:master pageTitle="Product List">
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+                $.get({
+                    url : '${pageContext.servletContext.contextPath}/ajaxCart',
+                    dataType : 'json',
+                    success : function(res) {
+                            var json = '<h1><a href="${pageContext.servletContext.contextPath}/cart">Cart: ' + JSON.stringify(res.totalQuantity) + ' items, ' + JSON.stringify(res.totalCost) + '$' +  '</a></h1>';
+                            $('#resultContainer').html(json);
+                    }
+                });
+        });
+    </script>
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('.button').click(function(e) {
+                e.preventDefault();
+                var rowId = this.id;
+                ajaxPost(rowId);
+            });
+
+            function ajaxPost(rowId) {
+                var formData = {
+                    phoneId: $('#phoneId'+rowId).val(),
+                    quantity: $('#quantity'+rowId).val(),
+                }
+
+                $.post({
+                    contentType : 'application/json',
+                    url : $('#phoneForm'+rowId).attr('action'),
+                    data : JSON.stringify(formData),
+                    dataType : 'json',
+                    beforeSend: function(xhr) {
+                        xhr.setRequestHeader("Accept", "application/json");
+                        xhr.setRequestHeader("Content-Type", "application/json");
+                        $('#messageContainer').html('');
+                    },
+                    success : function(res) {
+                        if (Object.keys(res.errorMessages).length === 0) {
+                            var json = '<h1><a href="${pageContext.servletContext.contextPath}/cart">Cart: ' + JSON.stringify(res.totalQuantity) + ' items, ' + JSON.stringify(res.totalCost) + '$' +  '</a></h1>';
+                            $('#resultContainer').html(json);
+                            $('#messageContainer').html('<p class="text-success">Phone '+formData.phoneId+' successfully added</p>');
+                            $('#error'+rowId).html('');
+                        }
+                        else {
+                            $.each(res.errorMessages, function(key, value) {
+                                $('#error'+key).html('<span class="text-danger">'+value+'</span>');
+                                $('#messageContainer').html('<p class="text-danger">Error occurred while adding phone '+formData.phoneId+'</p>');
+                            });
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+
   <div>
-    <div class="float-left">
-      Phones
-    </div>
-    <div id="resultContainer"></div>
+    <div id="messageContainer" class="float-left"></div>
       <div class="float-right">
         <form>
           <input type="text" name="queryProduct" value="${param.queryProduct}" placeholder="Search by model...">
@@ -18,6 +72,7 @@
       </div>
       <br>
   </div>
+    <br>
 <p>
   Found <c:out value="${phones.size()}"/> phones.
   <table class="table table-bordered table-striped">
@@ -32,7 +87,7 @@
         </th>
         <th><b>Color</b></th>
         <th><b>Display size</b>
-            <tags:sortLink sort="displaySize"></tags:sortLink>
+            <tags:sortLink sort="displaySizeInches"></tags:sortLink>
         </th>
         <th><b>Price</b>
             <tags:sortLink sort="price"></tags:sortLink>
@@ -42,29 +97,30 @@
       </tr>
     </thead>
     <c:forEach var="phone" items="${phones}">
-      <form:form action="${pageContext.servletContext.contextPath}/ajaxCart" method="post" id="phoneForm" name="phoneForm" modelAttribute="phoneToCart">
         <tr>
-          <td>
-            <img src="https://raw.githubusercontent.com/andrewosipenko/phoneshop-ext-images/master/${phone.imageUrl}">
-          </td>
-          <td>${phone.brand}</td>
-          <td>${phone.model}</td>
-          <td>
-            <c:forEach var="color" items="${phone.colors}">
-              ${color.code}
-            </c:forEach>
-          </td>
-          <td>${phone.displaySizeInches}"</td>
-          <td>${phone.price}$</td>
-          <td>
-              <form:input path="quantity" />
-              <form:hidden path="phoneId" value="${phone.id}" />
-          </td>
-          <td>
-            <input type="submit" value="Add to cart" />
-          </td>
+            <form:form action="${pageContext.servletContext.contextPath}/ajaxCart" method="post" id="phoneForm${phone.id}" modelAttribute="phoneToCart">
+              <td>
+                <img src="https://raw.githubusercontent.com/andrewosipenko/phoneshop-ext-images/master/${phone.imageUrl}">
+              </td>
+              <td>${phone.brand}</td>
+              <td>${phone.model}</td>
+              <td>
+                <c:forEach var="color" items="${phone.colors}">
+                  ${color.code}
+                </c:forEach>
+              </td>
+              <td>${phone.displaySizeInches}"</td>
+              <td>${phone.price}$</td>
+              <td>
+                  <form:hidden path="phoneId" value="${phone.id}" id="phoneId${phone.id}" />
+                  <form:input path="quantity" id="quantity${phone.id}" />
+                  <div id="error${phone.id}"></div>
+              </td>
+              <td>
+                <input type="submit" value="Add to cart" class="button" id="${phone.id}" />
+              </td>
+            </form:form>
         </tr>
-      </form:form>
     </c:forEach>
   </table>
 </p>

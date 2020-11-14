@@ -1,9 +1,8 @@
 package com.es.core.model.phone;
 
-import com.es.core.model.exception.InputErrorException;
 import org.apache.commons.beanutils.PropertyUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.RowMapper;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.ResultSetExtractor;
 
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
@@ -11,44 +10,38 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public class PhoneRowMapper implements RowMapper<Phone> {
+public class PhoneResultSetExtractor implements ResultSetExtractor<List<Phone>> {
 
-    private Map<String, String> phoneAttributesMap;
-    private List<String> attributesList;
+    private HashMap<String, String> phoneAttributesMap;
 
-    public void setPhoneAttributesMap(Map<String, String> phoneAttributesMap) {
+    public void setPhoneAttributesMap(HashMap<String, String> phoneAttributesMap) {
         this.phoneAttributesMap = phoneAttributesMap;
     }
 
-    @Autowired
-    public void setAttributesList(List<String> attributesList) {
-        this.attributesList = attributesList;
-    }
-
     @Override
-    public Phone mapRow(ResultSet rs, int rowNum) throws SQLException {
-        Phone phone;
-        try {
-            phone = populateNewPhone(rs);
-        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-            throw new RuntimeException();
-        } catch (ParseException e) {
-            throw new InputErrorException("Wrong input format");
-        }
+    public List<Phone> extractData(ResultSet rs) throws SQLException, DataAccessException {
+        Map<Long, Phone> phonesById = new HashMap<>();
         while (rs.next()) {
-            phone = populatePhoneWithColors(rs, phone);
+            Long id = getLongValue(rs, "id");
+            Phone phone = phonesById.get(id);
+            if (phone == null) {
+                try {
+                    phone = populateNewPhone(rs);
+                } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+                    throw new IllegalStateException(Arrays.toString(e.getStackTrace()));
+                }
+            }
+            populatePhoneWithColors(rs, phone);
+            phonesById.put(phone.getId(), phone);
         }
-        return phone;
+        return new ArrayList<>(phonesById.values());
     }
 
-    private Phone populateNewPhone(ResultSet rs) throws SQLException, NoSuchMethodException, InvocationTargetException, ParseException, IllegalAccessException {
+    private Phone populateNewPhone(ResultSet rs) throws SQLException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Phone phone = new Phone();
-        List<String> keys = attributesList;
+        Collection<String> keys = phoneAttributesMap.keySet();
         for (String key: keys) {
             switch (phoneAttributesMap.get(key)) {
                 case "Long":
@@ -69,30 +62,35 @@ public class PhoneRowMapper implements RowMapper<Phone> {
             }
         }
         phone.setColors(new HashSet<>());
-        return populatePhoneWithColors(rs, phone);
+        return phone;
     }
 
-    private Phone populatePhoneWithColors(ResultSet rs, Phone phone) throws SQLException {
+    private void populatePhoneWithColors(ResultSet rs, Phone phone) throws SQLException {
         Color color = new Color();
         color.setId(getLongValue(rs,"colorId"));
         color.setCode(rs.getString("code"));
         phone.getColors().add(color);
-        return phone;
     }
 
     private static Long getLongValue(ResultSet rs, String column) throws SQLException, NumberFormatException {
-        return rs.getString(column) == null ? 0 : Long.parseLong(rs.getString(column));
+        return Optional.ofNullable(rs.getString(column))
+                .map(Long::parseLong)
+                .orElse(0L);
     }
 
     private static BigDecimal getBigDecimalValue(ResultSet rs, String column) throws SQLException, NumberFormatException {
-        return rs.getString(column) == null ? BigDecimal.ZERO : new BigDecimal(rs.getString(column));
+        return Optional.ofNullable(rs.getString(column))
+                .map(BigDecimal::new)
+                .orElse(BigDecimal.ZERO);
     }
 
     private static Integer getIntegerValue(ResultSet rs, String column) throws SQLException, NumberFormatException {
-        return rs.getString(column) == null ? 0 : Integer.parseInt(rs.getString(column));
+        return Optional.ofNullable(rs.getString(column))
+                .map(Integer::parseInt)
+                .orElse(0);
     }
 
-    private static Date getDateValue(ResultSet rs, String column) throws SQLException, NumberFormatException, ParseException {
+    private static Date getDateValue(ResultSet rs, String column) throws SQLException, NumberFormatException {
         try {
             return rs.getString(column) == null ? null : (new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss")).parse(rs.getString(column));
         } catch (ParseException e) {
@@ -100,3 +98,5 @@ public class PhoneRowMapper implements RowMapper<Phone> {
         }
     }
 }
+
+

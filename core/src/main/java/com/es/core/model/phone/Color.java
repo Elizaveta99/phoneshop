@@ -1,6 +1,8 @@
 package com.es.core.model.phone;
 
-public class Color {
+import java.io.Serializable;
+
+public class Color implements Serializable {
     private Long id;
     private String code;
 

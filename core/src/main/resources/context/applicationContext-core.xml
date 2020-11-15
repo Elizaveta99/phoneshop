@@ -5,7 +5,8 @@
        xmlns:jdbc="http://www.springframework.org/schema/jdbc" xmlns:util="http://www.springframework.org/schema/util"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
                            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
-                           http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+                           http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
     <context:component-scan base-package="com.es.core" />
     <context:property-placeholder location="classpath:application.properties" />
@@ -21,76 +22,49 @@
         <constructor-arg type="javax.sql.DataSource" ref="dataSource"/>
     </bean>
 
-    <util:list id="attributesList" list-class="java.util.ArrayList" value-type="java.lang.String">
-        <value>id</value>
-        <value>brand</value>
-        <value>model</value>
-        <value>price</value>
-        <value>displaySizeInches</value>
-        <value>weightGr</value>
-        <value>lengthMm</value>
-        <value>widthMm</value>
-        <value>heightMm</value>
-        <value>announced</value>
-        <value>deviceType</value>
-        <value>os</value>
-        <value>displayResolution</value>
-        <value>pixelDensity</value>
-        <value>displayTechnology</value>
-        <value>backCameraMegapixels</value>
-        <value>frontCameraMegapixels</value>
-        <value>ramGb</value>
-        <value>internalStorageGb</value>
-        <value>batteryCapacityMah</value>
-        <value>talkTimeHours</value>
-        <value>standByTimeHours</value>
-        <value>bluetooth</value>
-        <value>positioning</value>
-        <value>imageUrl</value>
-        <value>description</value>
-    </util:list>
+    <util:map id="attributesMap" map-class="java.util.HashMap">
+        <entry key="id" value="Long"/>
+        <entry key="brand" value="String"/>
+        <entry key="model" value="String"/>
+        <entry key="price" value="BigDecimal"/>
+        <entry key="displaySizeInches" value="BigDecimal"/>
+        <entry key="weightGr" value="Integer"/>
+        <entry key="lengthMm" value="BigDecimal"/>
+        <entry key="widthMm" value="BigDecimal"/>
+        <entry key="heightMm" value="BigDecimal"/>
+        <entry key="announced" value="Date"/>
+        <entry key="deviceType" value="String"/>
+        <entry key="os" value="String"/>
+        <entry key="displayResolution" value="String"/>
+        <entry key="pixelDensity" value="Integer"/>
+        <entry key="displayTechnology" value="String"/>
+        <entry key="backCameraMegapixels" value="BigDecimal"/>
+        <entry key="frontCameraMegapixels" value="BigDecimal"/>
+        <entry key="ramGb" value="BigDecimal"/>
+        <entry key="internalStorageGb" value="BigDecimal"/>
+        <entry key="batteryCapacityMah" value="Integer"/>
+        <entry key="talkTimeHours" value="BigDecimal"/>
+        <entry key="standByTimeHours" value="BigDecimal"/>
+        <entry key="bluetooth" value="String"/>
+        <entry key="positioning" value="String"/>
+        <entry key="imageUrl" value="String"/>
+        <entry key="description" value="String"/>
+    </util:map>
 
+    <bean id="attributesList" factory-bean="attributesMap" factory-method="keySet"/>
 
-    <bean id="phoneRowMapper" class="com.es.core.model.phone.PhoneRowMapper">
-        <property name="attributesList" ref="attributesList" />
-        <property name="phoneAttributesMap">
-            <map>
-                <entry key="id" value="Long"/>
-                <entry key="brand" value="String"/>
-                <entry key="model" value="String"/>
-                <entry key="price" value="BigDecimal"/>
-                <entry key="displaySizeInches" value="BigDecimal"/>
-                <entry key="weightGr" value="Integer"/>
-                <entry key="lengthMm" value="BigDecimal"/>
-                <entry key="widthMm" value="BigDecimal"/>
-                <entry key="heightMm" value="BigDecimal"/>
-                <entry key="announced" value="Date"/>
-                <entry key="deviceType" value="String"/>
-                <entry key="os" value="String"/>
-                <entry key="displayResolution" value="String"/>
-                <entry key="pixelDensity" value="Integer"/>
-                <entry key="displayTechnology" value="String"/>
-                <entry key="backCameraMegapixels" value="BigDecimal"/>
-                <entry key="frontCameraMegapixels" value="BigDecimal"/>
-                <entry key="ramGb" value="BigDecimal"/>
-                <entry key="internalStorageGb" value="BigDecimal"/>
-                <entry key="batteryCapacityMah" value="Integer"/>
-                <entry key="talkTimeHours" value="BigDecimal"/>
-                <entry key="standByTimeHours" value="BigDecimal"/>
-                <entry key="bluetooth" value="String"/>
-                <entry key="positioning" value="String"/>
-                <entry key="imageUrl" value="String"/>
-                <entry key="description" value="String"/>
-            </map>
-        </property>
+    <bean id="phoneResultSetExtractor" class="com.es.core.model.phone.PhoneResultSetExtractor">
+        <property name="phoneAttributesMap" ref="attributesMap" />
     </bean>
 
     <bean id="phoneDao" class="com.es.core.model.phone.JdbcPhoneDao">
         <property name="attributesList" ref="attributesList" />
-        <property name="phoneRowMapper" ref="phoneRowMapper" />
+        <property name="phoneResultSetExtractor" ref="phoneResultSetExtractor" />
+        <property name="jdbcTemplate" ref="jdbcTemplate" />
     </bean>
 
     <jdbc:initialize-database enabled="${db.insertSchema}" data-source="dataSource">
         <jdbc:script location="classpath:db/schema.sql" />
     </jdbc:initialize-database>
+
 </beans>

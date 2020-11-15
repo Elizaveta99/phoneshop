@@ -1,6 +1,8 @@
 package com.es.core.model.phone;
 
-public class Stock {
+import java.io.Serializable;
+
+public class Stock implements Serializable {
     private Phone phone;
     private Integer stock;
     private Integer reserved;

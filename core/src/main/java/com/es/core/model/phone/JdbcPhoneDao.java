@@ -1,74 +1,83 @@
 package com.es.core.model.phone;
 
+import com.es.core.exception.*;
 import org.apache.commons.beanutils.BeanMap;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class JdbcPhoneDao implements PhoneDao {
 
-    private final String sqlGet = "select * from phones p left join phone2color pc on p.id = pc.phoneId left join colors c on pc.colorId = c.id where p.id = :p.id";
-    private final String sqlInsert = "insert into phones (id, brand, model, price, displaySizeInches, weightGr, lengthMm, widthMm, heightMm, announced, deviceType, os, displayResolution, pixelDensity, displayTechnology, backCameraMegapixels, frontCameraMegapixels, ramGb, internalStorageGb, batteryCapacityMah, talkTimeHours, standByTimeHours, bluetooth, positioning, imageUrl, description) values (:id, :brand, :model, :price, :displaySizeInches, :weightGr, :lengthMm, :widthMm, :heightMm, :announced, :deviceType, :os, :displayResolution, :pixelDensity, :displayTechnology, :backCameraMegapixels, :frontCameraMegapixels, :ramGb, :internalStorageGb, :batteryCapacityMah, :talkTimeHours, :standByTimeHours, :bluetooth, :positioning, :imageUrl, :description)";
-    private final String sqlIfExist = "select count(*) from phones where id = :id";
-    private final String sqlAllIds = "select id from phones offset :offset limit :limit";
-    private final String sqlUpdate = "update phones set brand = :brand, model = :model, price = :price, displaySizeInches = :displaySizeInches, weightGr = :weightGr, lengthMm = :lengthMm, widthMm = :widthMm, heightMm = :heightMm, announced = :announced, deviceType = :deviceType, os = :os, displayResolution = :displayResolution, pixelDensity = :pixelDensity, displayTechnology = :displayTechnology, backCameraMegapixels = :backCameraMegapixels, frontCameraMegapixels = :frontCameraMegapixels, ramGb = :ramGb, internalStorageGb = :internalStorageGb, batteryCapacityMah = :batteryCapacityMah, talkTimeHours = :talkTimeHours, standByTimeHours = :standByTimeHours, bluetooth = :bluetooth, positioning = :positioning, imageUrl = :imageUrl, description = :description where id = :id";
-    private final String sqlDeleteColors = "delete from phone2color pc where pc.phoneId = :id";
-    private final String sqlInsertColors = "insert into phone2color (phoneId, colorId) values (:phoneId, :colorId)";
+    private static final String SQL_GET = "select * from phones p left join phone2color pc on p.id = pc.phoneId left join colors c on pc.colorId = c.id where p.id = :p.id";
+    private static final String SQL_INSERT = "insert into phones (id, brand, model, price, displaySizeInches, weightGr, lengthMm, widthMm, heightMm, announced, deviceType, os, displayResolution, pixelDensity, displayTechnology, backCameraMegapixels, frontCameraMegapixels, ramGb, internalStorageGb, batteryCapacityMah, talkTimeHours, standByTimeHours, bluetooth, positioning, imageUrl, description) values (:id, :brand, :model, :price, :displaySizeInches, :weightGr, :lengthMm, :widthMm, :heightMm, :announced, :deviceType, :os, :displayResolution, :pixelDensity, :displayTechnology, :backCameraMegapixels, :frontCameraMegapixels, :ramGb, :internalStorageGb, :batteryCapacityMah, :talkTimeHours, :standByTimeHours, :bluetooth, :positioning, :imageUrl, :description)";
+    private static final String SQL_IF_EXIST = "select count(*) from phones where id = :id";
+    private static final String SQL_UPDATE = "update phones set brand = :brand, model = :model, price = :price, displaySizeInches = :displaySizeInches, weightGr = :weightGr, lengthMm = :lengthMm, widthMm = :widthMm, heightMm = :heightMm, announced = :announced, deviceType = :deviceType, os = :os, displayResolution = :displayResolution, pixelDensity = :pixelDensity, displayTechnology = :displayTechnology, backCameraMegapixels = :backCameraMegapixels, frontCameraMegapixels = :frontCameraMegapixels, ramGb = :ramGb, internalStorageGb = :internalStorageGb, batteryCapacityMah = :batteryCapacityMah, talkTimeHours = :talkTimeHours, standByTimeHours = :standByTimeHours, bluetooth = :bluetooth, positioning = :positioning, imageUrl = :imageUrl, description = :description where id = :id";
+    private static final String SQL_DELETE_COLORS = "delete from phone2color pc where pc.phoneId = :id";
+    private static final String SQL_INSERT_COLORS = "insert into phone2color (phoneId, colorId) values (:phoneId, :colorId)";
+    private static final String SQL_GET_STOCK = "select s.stock from phones p left join stocks s on p.id = s.phoneId where p.id = :id";
+    private static final String SQL_GET_SEARCH_TEMPLATE = "select p.*, pc.*, c.* from phones p left join stocks s on p.id = s.phoneId left join phone2color pc on p.id = pc.phoneId left join colors c on pc.colorId = c.id where s.stock - s.reserved > 0 and p.model like '%%'||:model||'%%' order by %s %s offset :offset limit :limit";
 
     private NamedParameterJdbcTemplate jdbcTemplate;
-    private List<String> attributesList;
-    private PhoneRowMapper phoneRowMapper;
+    private Collection<String> attributesList;
+    private PhoneResultSetExtractor phoneResultSetExtractor;
 
-    public void setPhoneRowMapper(PhoneRowMapper phoneRowMapper) {
-        this.phoneRowMapper = phoneRowMapper;
+    public void setJdbcTemplate(NamedParameterJdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void setAttributesList(List<String> attributesList) {
+    public void setAttributesList(Collection<String> attributesList) {
         this.attributesList = attributesList;
     }
 
-    @Autowired
-    public void setDataSource(DriverManagerDataSource dataSource) {
-        jdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
+    public void setPhoneResultSetExtractor(PhoneResultSetExtractor phoneResultSetExtractor) {
+        this.phoneResultSetExtractor = phoneResultSetExtractor;
     }
 
     @Override
-    public Optional<Phone> get(final Long key) {
+    public Phone get(final Long key) {
         Phone foundPhone;
         try {
             SqlParameterSource namedParameters = new MapSqlParameterSource("p.id", key);
-            foundPhone = jdbcTemplate.queryForObject(sqlGet, namedParameters, phoneRowMapper);
-        } catch (EmptyResultDataAccessException e) {
-            return Optional.empty();
+            foundPhone = jdbcTemplate.query(SQL_GET, namedParameters, phoneResultSetExtractor).get(0);
+        } catch (EmptyResultDataAccessException | IndexOutOfBoundsException e) {
+            throw new ItemNotFoundException();
         }
-        return Optional.ofNullable(foundPhone);
+        return foundPhone;
+    }
+
+    @Override
+    public int getStock(Long key) {
+        SqlParameterSource namedParameters = new MapSqlParameterSource("id", key);
+        return jdbcTemplate.queryForObject(SQL_GET_STOCK, namedParameters, Integer.class);
     }
 
     @Override
     public void save(final Phone phone) {
         SqlParameterSource namedParameters = new MapSqlParameterSource("id", phone.getId());
-        Map<String,Object> namedParametersMap;
+        Map<String,Object> namedParametersMap = getNamedParametersMapWithoutColors(phone);
 
-        boolean isExist = jdbcTemplate.queryForObject(sqlIfExist, namedParameters, Integer.class) > 0;
+        boolean isExist = jdbcTemplate.queryForObject(SQL_IF_EXIST, namedParameters, Integer.class) > 0;
+
         if (isExist) {
-            namedParametersMap = getNamedParametersMapWithoutColors(phone);
-            if (phone.getColors().size() > 0) {
-                jdbcTemplate.update(sqlDeleteColors, namedParameters);
+            if (!phone.getColors().isEmpty()) {
+                jdbcTemplate.update(SQL_DELETE_COLORS, namedParameters);
             }
-            jdbcTemplate.update(sqlUpdate, namedParametersMap);
+            jdbcTemplate.update(SQL_UPDATE, namedParametersMap);
         } else {
-            namedParametersMap = getNamedParametersMapWithoutColors(phone);
-            jdbcTemplate.update(sqlInsert, namedParametersMap);
+            jdbcTemplate.update(SQL_INSERT, namedParametersMap);
         }
-        namedParametersMap.put("phoneId", phone.getId());
+
+        Map<String,Object> namedParametersPhoneColorsMap = new HashMap<>();
+        namedParametersPhoneColorsMap.put("phoneId", phone.getId());
         for (Color color: phone.getColors()) {
-            namedParametersMap.put("colorId", color.getId());
-            jdbcTemplate.update(sqlInsertColors, namedParametersMap);
+            namedParametersPhoneColorsMap.put("colorId", color.getId());
+            jdbcTemplate.update(SQL_INSERT_COLORS, namedParametersPhoneColorsMap);
         }
     }
 
@@ -82,16 +91,17 @@ public class JdbcPhoneDao implements PhoneDao {
     }
 
     @Override
-    public List<Phone> findAll(int offset, int limit) {
-        Map<String, Integer> namedParametersMap = new HashMap<String, Integer>() {{
+    public List<Phone> findAll(int offset, int limit, String queryProduct, String sortField, String sortOrder) {
+        Map<String, Object> namedParametersMap = new HashMap<String, Object>() {{
                 put("offset", offset);
                 put("limit", limit);
+                put("model", queryProduct);
         }};
-        List<Long> ids = jdbcTemplate.queryForList(sqlAllIds, namedParametersMap, Long.class);
-        List<Phone> phones = new ArrayList<>();
-        for (Long id:ids) {
-            phones.add(get(id).get());
-        }
-        return phones;
+        return jdbcTemplate.query(makeSqlSearchQuery(sortField, sortOrder), namedParametersMap, phoneResultSetExtractor);
     }
+
+    private String makeSqlSearchQuery(String sortField, String sortOrder) {
+        return String.format(SQL_GET_SEARCH_TEMPLATE, sortField, sortOrder);
+    }
+
 }

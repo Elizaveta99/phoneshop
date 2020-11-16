@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -47,9 +46,6 @@ public class HttpSessionCartService implements CartService {
     }
 
     private void checkQuantity(Long quantity, Long newQuantity, Phone phone) throws OutOfStockException {
-        if (quantity <= 0) {
-            throw new OutOfStockException(null, quantity, 0L);
-        }
         int stock = phoneDao.getStock(phone.getId());
         if (stock < newQuantity) {
             throw new OutOfStockException(phone, newQuantity, (long)stock);
@@ -66,12 +62,23 @@ public class HttpSessionCartService implements CartService {
     }
 
     @Override
-    public synchronized void update(Map<Long, Long> items) {
-        throw new UnsupportedOperationException("TODO");
+    public synchronized void update(Long phoneId, Long quantity) throws OutOfStockException {
+        Phone phone = phoneDao.get(phoneId);
+        Optional<CartItem> cartItemOptional = getCartItemOptional(cart, phone);
+
+        checkQuantity(quantity, quantity, phone);
+
+        cartItemOptional.ifPresent(cartItem -> cartItem.setQuantity(quantity));
+        recalculateCart(cart);
     }
 
     @Override
     public synchronized void remove(Long phoneId) {
-        throw new UnsupportedOperationException("TODO");
+        Phone product = phoneDao.get(phoneId);
+        Optional<CartItem> cartItemOptional = getCartItemOptional(cart, product);
+        if (cartItemOptional.isPresent()) {
+            cart.getItems().removeIf(cartItem -> phoneId.equals(cartItem.getPhone().getId()));
+        }
+        recalculateCart(cart);
     }
 }

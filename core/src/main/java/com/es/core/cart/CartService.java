@@ -1,7 +1,6 @@
 package com.es.core.cart;
 
 import com.es.core.exception.*;
-import java.util.Map;
 
 public interface CartService {
 
@@ -9,12 +8,7 @@ public interface CartService {
 
     void addPhone(Long phoneId, Long quantity) throws OutOfStockException;
 
-    /**
-     * @param items
-     * key: {@link com.es.core.model.phone.Phone#id}
-     * value: quantity
-     */
-    void update(Map<Long, Long> items);
+    void update(Long phoneId, Long quantity) throws OutOfStockException;
 
     void remove(Long phoneId);
 }

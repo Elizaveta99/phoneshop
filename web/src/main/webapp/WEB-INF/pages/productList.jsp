@@ -6,6 +6,17 @@
 
 <tags:master pageTitle="Product List">
 
+    <script>
+        $(document).ready(function () {
+            $('#phonesTableId').DataTable({
+                "scrollY": "400px",
+                "scrollCollapse": true,
+                "searching": false
+            });
+            $('.dataTables_length').addClass('bs-select');
+        });
+    </script>
+
     <script type="text/javascript">
         $(document).ready(function() {
                 $.get({
@@ -21,7 +32,7 @@
 
     <script type="text/javascript">
         $(document).ready(function() {
-            $('.button').click(function(e) {
+            $("#phonesTableId").on("click", ".button", function(e){
                 e.preventDefault();
                 var rowId = this.id;
                 ajaxPost(rowId);
@@ -74,8 +85,7 @@
   </div>
     <br>
 <p>
-  Found <c:out value="${phones.size()}"/> phones.
-  <table class="table table-bordered table-striped">
+  <table id="phonesTableId" class="table table-bordered table-striped">
     <thead>
       <tr>
         <th><b>Image</b></th>
@@ -103,7 +113,11 @@
                 <img src="https://raw.githubusercontent.com/andrewosipenko/phoneshop-ext-images/master/${phone.imageUrl}">
               </td>
               <td>${phone.brand}</td>
-              <td>${phone.model}</td>
+              <td>
+                  <a href="${pageContext.servletContext.contextPath}/productDetails/${phone.id}">
+                      ${phone.model}
+                  </a>
+              </td>
               <td>
                 <c:forEach var="color" items="${phone.colors}">
                   ${color.code}

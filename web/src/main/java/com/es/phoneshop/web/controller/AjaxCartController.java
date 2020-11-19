@@ -3,7 +3,7 @@ package com.es.phoneshop.web.controller;
 import com.es.core.exception.*;
 import com.es.core.cart.CartService;
 import com.es.phoneshop.web.dto.CartJsonResponse;
-import com.es.phoneshop.web.dto.PhoneToCart;
+import com.es.phoneshop.web.dto.AddToCartForm;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -32,21 +32,21 @@ public class AjaxCartController {
     }
 
     @RequestMapping(method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-    public CartJsonResponse addPhone(@RequestBody @Valid PhoneToCart phoneToCart, BindingResult result) {
+    public CartJsonResponse addPhone(@RequestBody @Valid AddToCartForm addToCartForm, BindingResult result) {
         CartJsonResponse response = new CartJsonResponse();
 
         if (result.hasErrors()) {
             Map<String, String> errors = result.getFieldErrors().stream()
                     .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                    .collect(Collectors.toMap(val -> phoneToCart.getPhoneId().toString(), Function.identity()));
+                    .collect(Collectors.toMap(val -> addToCartForm.getPhoneId().toString(), Function.identity()));
             response.setErrorMessages(errors);
             return response;
         }
         try {
-            cartService.addPhone(phoneToCart.getPhoneId(), Long.valueOf(phoneToCart.getQuantity()));
+            cartService.addPhone(addToCartForm.getPhoneId(), Long.valueOf(addToCartForm.getQuantity()));
         } catch (OutOfStockException e) {
             Map<String, String> errors = new HashMap<String, String> () {{
-                    put(phoneToCart.getPhoneId().toString(), String.format(OUT_OF_STOCK_ERROR, e.getStockAvailable()));
+                    put(addToCartForm.getPhoneId().toString(), String.format(OUT_OF_STOCK_ERROR, e.getStockAvailable()));
             }};
             response.setErrorMessages(errors);
             return response;

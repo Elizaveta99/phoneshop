@@ -108,7 +108,7 @@
     </thead>
     <c:forEach var="phone" items="${phones}">
         <tr>
-            <form:form action="${pageContext.servletContext.contextPath}/ajaxCart" method="post" id="phoneForm${phone.id}" modelAttribute="phoneToCart">
+            <form:form action="${pageContext.servletContext.contextPath}/ajaxCart" method="post" id="phoneForm${phone.id}" modelAttribute="addToCartForm">
               <td>
                 <img src="https://raw.githubusercontent.com/andrewosipenko/phoneshop-ext-images/master/${phone.imageUrl}">
               </td>

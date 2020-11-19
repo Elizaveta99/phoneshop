@@ -87,7 +87,7 @@
                             <td><h3>Price: ${phone.price}$</h3></td>
                         </tr>
                         <tr>
-                            <form:form action="${pageContext.servletContext.contextPath}/ajaxCart" method="post" id="phoneForm${phone.id}" modelAttribute="phoneToCart">
+                            <form:form action="${pageContext.servletContext.contextPath}/ajaxCart" method="post" id="phoneForm${phone.id}" modelAttribute="addToCartForm">
 
                                     <td style="width:50%">
                                         <div>

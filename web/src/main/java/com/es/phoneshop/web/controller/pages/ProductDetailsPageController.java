@@ -1,7 +1,7 @@
 package com.es.phoneshop.web.controller.pages;
 
 import com.es.core.model.phone.PhoneDao;
-import com.es.phoneshop.web.dto.PhoneToCart;
+import com.es.phoneshop.web.dto.AddToCartForm;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -12,14 +12,14 @@ import javax.annotation.Resource;
 @RequestMapping(value = "/productDetails")
 public class ProductDetailsPageController {
     private static final String PHONE = "phone";
-    private static final String PHONE_TO_CART = "phoneToCart";
+    private static final String ADD_TO_CART_FORM = "addToCartForm";
 
     @Resource
     private PhoneDao phoneDao;
 
     @ModelAttribute
     public void phoneToCart(Model model) {
-        model.addAttribute(PHONE_TO_CART, new PhoneToCart());
+        model.addAttribute(ADD_TO_CART_FORM, new AddToCartForm());
     }
 
     @RequestMapping(method = RequestMethod.GET, value = "/{key}")

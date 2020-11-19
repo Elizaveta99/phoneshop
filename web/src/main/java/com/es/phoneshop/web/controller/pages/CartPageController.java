@@ -1,9 +1,12 @@
 package com.es.phoneshop.web.controller.pages;
 
+import com.es.core.cart.CartItem;
 import com.es.core.cart.CartService;
+import com.es.core.exception.ItemNotFoundException;
 import com.es.core.exception.OutOfStockException;
-import com.es.phoneshop.web.dto.UpdateCartDto;
-import com.es.phoneshop.web.dto.UpdateCartForm;
+import com.es.core.model.phone.Phone;
+import com.es.phoneshop.web.dto.AddToCartForm;
+import com.es.phoneshop.web.dto.MultipleAddToCartForm;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -16,15 +19,17 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping(value = "/cart")
 public class CartPageController {
-    private static final String UPDATE_CART_FORM = "updateCartForm";
+    private static final String MULTIPLE_ADD_TO_CART_FORM = "multipleAddToCartForm";
+    private static final String PHONES = "phones";
     private static final String ERRORS = "errors";
-    private static final String VALID_ERRORS = "validErrors";
+    private static final String VALIDATION_ERRORS = "validationErrors";
     private static final String MESSAGE = "message";
     private static final String OUT_OF_STOCK_ERROR = "Out of stock, max available %d";
     private static final String SUCCESS_MESSAGE = "Cart updated successfully";
@@ -33,55 +38,65 @@ public class CartPageController {
     @Resource
     private CartService cartService;
 
-    @ModelAttribute
-    public void setUpdateCartForm(Model model) {
-        UpdateCartForm updateCartForm = new UpdateCartForm();
-        updateCartForm.setUpdateCartList(cartService.getCart().getItems().stream()
-                .map(cartItem -> new UpdateCartDto(cartItem.getPhone(), cartItem.getQuantity().toString()))
-                .collect(Collectors.toList()));
+    private List<Phone> getPhonesFromCart() {
+        return cartService.getCart().getItems().stream()
+                .map(CartItem::getPhone)
+                .collect(Collectors.toList());
+    }
 
-        model.addAttribute(UPDATE_CART_FORM, updateCartForm);
+    private void attachMultipleAddToCartForm(Model model) {
+        MultipleAddToCartForm multipleAddToCartForm = new MultipleAddToCartForm();
+        multipleAddToCartForm.setAddToCartFormList(cartService.getCart().getItems().stream()
+                .map(cartItem -> new AddToCartForm(cartItem.getPhone().getId(), cartItem.getQuantity().toString()))
+                .collect(Collectors.toList()));
+        model.addAttribute(MULTIPLE_ADD_TO_CART_FORM, multipleAddToCartForm);
+        model.addAttribute(PHONES, getPhonesFromCart());
     }
 
     @RequestMapping(method = RequestMethod.GET)
     public String getCart(Model model) {
-        setUpdateCartForm(model);
+        attachMultipleAddToCartForm(model);
         return "cart";
     }
 
     @RequestMapping(method = RequestMethod.POST)
-    public String updateCart(@ModelAttribute @Valid UpdateCartForm updateCartForm, BindingResult result, Model model) {
-        setUpdateCartForm(model);
+    public String updateCart(@ModelAttribute @Valid MultipleAddToCartForm multipleAddToCartForm, BindingResult result, Model model) {
+        model.addAttribute(PHONES, getPhonesFromCart());
         if (result.hasErrors()) {
-            return handleErrors(result, model, updateCartForm);
+            handleErrors(result, model);
+            return "cart";
         }
         model.addAttribute(MESSAGE, SUCCESS_MESSAGE);
         Map<Long, String> errors = new HashMap<>();
-        for (UpdateCartDto updateCartDto: updateCartForm.getUpdateCartList()) {
-            try {
-                cartService.update(updateCartDto.getPhone().getId(), Long.parseLong(updateCartDto.getQuantity()));
-            } catch (OutOfStockException e) {
-                errors.put(e.getPhone().getId(), String.format(OUT_OF_STOCK_ERROR, e.getStockAvailable()));
-                model.addAttribute(MESSAGE, ERROR_MESSAGE);
+        if (multipleAddToCartForm.getAddToCartFormList() != null) {
+            for (AddToCartForm addToCartForm : multipleAddToCartForm.getAddToCartFormList()) {
+                try {
+                    cartService.update(addToCartForm.getPhoneId(), Long.parseLong(addToCartForm.getQuantity()));
+                } catch (OutOfStockException e) {
+                    errors.put(e.getPhone().getId(), String.format(OUT_OF_STOCK_ERROR, e.getStockAvailable()));
+                    model.addAttribute(MESSAGE, ERROR_MESSAGE);
+                }
             }
+            model.addAttribute(ERRORS, errors);
         }
-        model.addAttribute(ERRORS, errors);
-        setUpdateCartForm(model);
         return "cart";
     }
 
     @RequestMapping(method = RequestMethod.DELETE, value = "/delete/{id}")
     public String deletePhone(@PathVariable String id, Model model) {
-        cartService.remove(Long.parseLong(id));
-        setUpdateCartForm(model);
+        try {
+            cartService.remove(Long.parseLong(id));
+        } catch (NumberFormatException e) {
+            throw new ItemNotFoundException();
+        }
+        attachMultipleAddToCartForm(model);
         return "cart";
     }
 
-    private String handleErrors(BindingResult result, Model model, UpdateCartForm updateCartForm) {
+    private void handleErrors(BindingResult result, Model model) {
         Map<String, String> errors = result.getFieldErrors().stream()
                 .collect(Collectors.toMap(FieldError::getField, FieldError::getDefaultMessage));
-        model.addAttribute(VALID_ERRORS, errors);
+        model.addAttribute(VALIDATION_ERRORS, errors);
         model.addAttribute(MESSAGE, ERROR_MESSAGE);
-        return "cart";
     }
 }

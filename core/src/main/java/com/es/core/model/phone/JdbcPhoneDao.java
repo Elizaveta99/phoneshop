@@ -21,6 +21,7 @@ public class JdbcPhoneDao implements PhoneDao {
     private static final String SQL_DELETE_COLORS = "delete from phone2color pc where pc.phoneId = :id";
     private static final String SQL_INSERT_COLORS = "insert into phone2color (phoneId, colorId) values (:phoneId, :colorId)";
     private static final String SQL_GET_STOCK = "select s.stock from phones p left join stocks s on p.id = s.phoneId where p.id = :id";
+    private static final String SQL_UPDATE_STOCK = "update stocks set stock = :stock where phoneId = :phoneId";
     private static final String SQL_GET_SEARCH_TEMPLATE = "select p.*, pc.*, c.* from phones p left join stocks s on p.id = s.phoneId left join phone2color pc on p.id = pc.phoneId left join colors c on pc.colorId = c.id where s.stock - s.reserved > 0 and p.model like '%%'||:model||'%%' order by %s %s offset :offset limit :limit";
 
     private NamedParameterJdbcTemplate jdbcTemplate;
@@ -55,6 +56,15 @@ public class JdbcPhoneDao implements PhoneDao {
     public int getStock(Long key) {
         SqlParameterSource namedParameters = new MapSqlParameterSource("id", key);
         return jdbcTemplate.queryForObject(SQL_GET_STOCK, namedParameters, Integer.class);
+    }
+
+    @Override
+    public void updateStock(Long key, int stock) {
+        Map<String, Object> namedParametersMap = Map.ofEntries(
+                Map.entry("phoneId", key),
+                Map.entry("stock", stock)
+        );
+        jdbcTemplate.update(SQL_UPDATE_STOCK, namedParametersMap);
     }
 
     @Override

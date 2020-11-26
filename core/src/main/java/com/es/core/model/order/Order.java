@@ -7,22 +7,28 @@ public class Order
 {
     private Long id;
     private List<OrderItem> orderItems;
+
+    private String secureId;
+
     /**
      *  A sum of order item prices;
      */
-    private BigDecimal subtotal;
+    private BigDecimal subtotal = BigDecimal.ZERO;
+
     private BigDecimal deliveryPrice;
+
     /**
      * <code>subtotal</code> + <code>deliveryPrice</code>
      */
-    private BigDecimal totalPrice;
+    private BigDecimal totalPrice = BigDecimal.ZERO;
 
     private String firstName;
     private String lastName;
     private String deliveryAddress;
     private String contactPhoneNo;
+    private String additionalInformation;
 
-    private OrderStatus status;
+    private String status;
 
     public Long getId() {
         return id;
@@ -38,6 +44,14 @@ public class Order
 
     public void setOrderItems(List<OrderItem> orderItems) {
         this.orderItems = orderItems;
+    }
+
+    public String getSecureId() {
+        return secureId;
+    }
+
+    public void setSecureId(String secureId) {
+        this.secureId = secureId;
     }
 
     public BigDecimal getSubtotal() {
@@ -96,11 +110,20 @@ public class Order
         this.contactPhoneNo = contactPhoneNo;
     }
 
-    public OrderStatus getStatus() {
+    public String getAdditionalInformation() {
+        return additionalInformation;
+    }
+
+    public void setAdditionalInformation(String additionalInformation) {
+        this.additionalInformation = additionalInformation;
+    }
+
+    public String getStatus() {
         return status;
     }
 
-    public void setStatus(OrderStatus status) {
+    public void setStatus(String status) {
         this.status = status;
     }
+
 }

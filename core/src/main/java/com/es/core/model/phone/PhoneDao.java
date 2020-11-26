@@ -8,4 +8,5 @@ public interface PhoneDao {
     void save(Phone phone);
     List<Phone> findAll(int offset, int limit, String queryProduct, String sortField, String sortOrder);
     int getStock(Long key);
+    void updateStock(Long key, int stock);
 }

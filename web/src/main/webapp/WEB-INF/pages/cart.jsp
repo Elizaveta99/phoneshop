@@ -29,7 +29,7 @@
       <div class="float-right" id="messageContainer">${message}</div>
     </div>
     <div class="float-right">
-      <button>Order</button>
+      <button><a href="${pageContext.servletContext.contextPath}/order">Order</a></button>  
     </div>
   </div>
   <br>
@@ -85,9 +85,10 @@
     </table>
       <p class="float-right">
         <input type="submit" value="Update" />
-        <button>Order</button>
+        <button><a href="${pageContext.servletContext.contextPath}/order">Order</a></button>
       </p>
     </form:form>
-  <form:form method="post" id="deleteCartItem" />
+  <form:form method="delete" id="deleteCartItem" />
+  <form:form method="get" id="toOrderPage" />
   </p>
 </tags:master>

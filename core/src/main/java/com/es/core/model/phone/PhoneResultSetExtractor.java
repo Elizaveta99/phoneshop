@@ -16,15 +16,25 @@ public class PhoneResultSetExtractor implements ResultSetExtractor<List<Phone>> 
 
     private HashMap<String, String> phoneAttributesMap;
 
+    private String phoneIdColumnName;
+
     public void setPhoneAttributesMap(HashMap<String, String> phoneAttributesMap) {
         this.phoneAttributesMap = phoneAttributesMap;
+    }
+
+    public void setPhoneIdColumnName(String phoneIdColumnName) {
+        this.phoneIdColumnName = phoneIdColumnName;
+    }
+
+    public String getPhoneIdColumnName() {
+        return phoneIdColumnName;
     }
 
     @Override
     public List<Phone> extractData(ResultSet rs) throws SQLException, DataAccessException {
         Map<Long, Phone> phonesById = new HashMap<>();
         while (rs.next()) {
-            Long id = getLongValue(rs, "id");
+            Long id = getLongValue(rs, phoneIdColumnName);
             Phone phone = phonesById.get(id);
             if (phone == null) {
                 try {
@@ -61,6 +71,7 @@ public class PhoneResultSetExtractor implements ResultSetExtractor<List<Phone>> 
                     break;
             }
         }
+        phone.setId(getLongValue(rs, phoneIdColumnName));
         phone.setColors(new HashSet<>());
         return phone;
     }
@@ -97,6 +108,7 @@ public class PhoneResultSetExtractor implements ResultSetExtractor<List<Phone>> 
             return null;
         }
     }
+
 }
 
 

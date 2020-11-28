@@ -22,7 +22,7 @@
         <constructor-arg type="javax.sql.DataSource" ref="dataSource"/>
     </bean>
 
-    <util:map id="attributesMap" map-class="java.util.HashMap">
+    <util:map id="attributesPhoneMap" map-class="java.util.HashMap">
         <entry key="id" value="Long"/>
         <entry key="brand" value="String"/>
         <entry key="model" value="String"/>
@@ -51,15 +51,18 @@
         <entry key="description" value="String"/>
     </util:map>
 
-    <bean id="attributesList" factory-bean="attributesMap" factory-method="keySet"/>
+    <bean id="attributesPhoneList" factory-bean="attributesPhoneMap" factory-method="keySet"/>
 
-    <bean id="phoneResultSetExtractor" class="com.es.core.model.phone.PhoneResultSetExtractor">
-        <property name="phoneAttributesMap" ref="attributesMap" />
-        <property name="phoneIdColumnName" value="id"/>
+    <bean id="helperExtractorService" class="com.es.core.service.helper.impl.HelperExtractorService" scope="prototype">
+        <property name="phoneAttributesMap" ref="attributesPhoneMap" />
     </bean>
 
-    <bean id="phoneDao" class="com.es.core.model.phone.JdbcPhoneDao">
-        <property name="attributesList" ref="attributesList" />
+    <bean id="phoneResultSetExtractor" class="com.es.core.util.PhoneResultSetExtractor">
+        <property name="helperExtractorService" ref="helperExtractorService" />
+    </bean>
+
+    <bean id="phoneDao" class="com.es.core.dao.impl.JdbcPhoneDao">
+        <property name="attributesPhoneList" ref="attributesPhoneList" />
         <property name="phoneResultSetExtractor" ref="phoneResultSetExtractor" />
         <property name="jdbcTemplate" ref="jdbcTemplate" />
     </bean>
@@ -75,24 +78,20 @@
         <entry key="deliveryAddress" value="String"/>
         <entry key="contactPhoneNo" value="String"/>
         <entry key="additionalInformation" value="String"/>
-        <entry key="status" value="String"/>
+        <entry key="status" value="OrderStatus"/>
     </util:map>
 
     <bean id="attributesOrderList" factory-bean="attributesOrderMap" factory-method="keySet"/>
 
-    <bean id="orderResultSetExtractor" class="com.es.core.model.order.OrderResultSetExtractor">
+    <bean id="orderResultSetExtractor" class="com.es.core.util.OrderResultSetExtractor">
         <property name="orderAttributesMap" ref="attributesOrderMap" />
+        <property name="helperExtractorService" ref="helperExtractorService" />
     </bean>
 
-    <bean id="orderDao" class="com.es.core.model.order.JdbcOrderDao">
+    <bean id="orderDao" class="com.es.core.dao.impl.JdbcOrderDao">
         <property name="orderResultSetExtractor" ref="orderResultSetExtractor" />
         <property name="attributesOrderList" ref="attributesOrderList" />
         <property name="jdbcTemplate" ref="jdbcTemplate" />
-        <property name="phoneResultSetExtractor" ref="phoneResultSetExtractor" />
-    </bean>
-
-    <bean id="order" class="com.es.core.model.order.Order" scope="prototype">
-        <property name="deliveryPrice" value="${delivery.price}" />
     </bean>
 
     <jdbc:initialize-database enabled="${db.insertSchema}" data-source="dataSource">

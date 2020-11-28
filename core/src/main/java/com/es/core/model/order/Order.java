@@ -1,5 +1,7 @@
 package com.es.core.model.order;
 
+import com.es.core.enumeration.OrderStatus;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -28,7 +30,7 @@ public class Order
     private String contactPhoneNo;
     private String additionalInformation;
 
-    private String status;
+    private OrderStatus status;
 
     public Long getId() {
         return id;
@@ -118,12 +120,11 @@ public class Order
         this.additionalInformation = additionalInformation;
     }
 
-    public String getStatus() {
+    public OrderStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(OrderStatus status) {
         this.status = status;
     }
-
 }

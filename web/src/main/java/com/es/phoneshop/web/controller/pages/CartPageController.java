@@ -1,7 +1,7 @@
 package com.es.phoneshop.web.controller.pages;
 
-import com.es.core.cart.CartItem;
-import com.es.core.cart.CartService;
+import com.es.core.model.cart.CartItem;
+import com.es.core.service.cart.*;
 import com.es.core.exception.ItemNotFoundException;
 import com.es.core.exception.OutOfStockException;
 import com.es.core.model.phone.Phone;
@@ -98,7 +98,7 @@ public class CartPageController {
     public String deletePhone(@PathVariable String id, RedirectAttributes redirectAttributes) {
         try {
             cartService.remove(Long.parseLong(id));
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException | ItemNotFoundException e) {
             redirectAttributes.addFlashAttribute(MESSAGE, ERROR_DELETE_MESSAGE);
         }
         return "redirect:/cart";

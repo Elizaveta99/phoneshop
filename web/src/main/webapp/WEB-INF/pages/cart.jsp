@@ -88,7 +88,7 @@
         <button><a href="${pageContext.servletContext.contextPath}/order">Order</a></button>
       </p>
     </form:form>
-  <form:form method="delete" id="deleteCartItem" />
+  <form:form method="post" id="deleteCartItem" />
   <form:form method="get" id="toOrderPage" />
   </p>
 </tags:master>

@@ -14,7 +14,7 @@ public class OrderDataForm {
     @Size(min = 1, message = "wrong value", max = 50)
     private String deliveryAddress;
 
-    @Pattern(message = "wrong format", regexp="^(\\+\\d{1,3}( )?)?(\\d{2}[ ]?)(\\d{3}[- ]?)(\\d{2}[- ]?)\\d{2}$")
+    @Pattern(message = "wrong format", regexp="^(\\+\\d{1,3} ?)?(\\d{2} ?)(\\d{3}[- ]?)(\\d{2}[- ]?)\\d{2}$")
     private String contactPhoneNo;
 
     @Size(min = 0, message = "wrong value", max = 200)

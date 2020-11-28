@@ -16,7 +16,7 @@ create table orders (
   deliveryAddress VARCHAR(50),
   contactPhoneNo VARCHAR(20),
   additionalInformation VARCHAR(200),
-  status VARCHAR(10),
+  status VARCHAR(255) check (status in ('NEW', 'DELIVERED', 'REJECTED')),
   UNIQUE (secureId)
 );
 

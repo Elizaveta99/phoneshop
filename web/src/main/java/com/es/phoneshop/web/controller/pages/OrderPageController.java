@@ -1,10 +1,9 @@
 package com.es.phoneshop.web.controller.pages;
 
-import com.es.core.cart.CartService;
+import com.es.core.enumeration.OrderStatus;
 import com.es.core.exception.OutOfStockException;
 import com.es.core.model.order.Order;
-import com.es.core.model.order.OrderStatus;
-import com.es.core.order.OrderService;
+import com.es.core.service.order.OrderService;
 import com.es.phoneshop.web.dto.OrderDataForm;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,17 +26,10 @@ public class OrderPageController {
     private static final String ORDER_DATA_FORM = "orderDataForm";
     private static final String VALIDATION_ERRORS = "validationErrors";
     private static final String MESSAGE = "message";
-    private static final String OUT_OF_STOCK_ERROR = "Out of stock, max available %d";
     private static final String ERROR_MESSAGE = "Error occurred while placing order";
 
     @Resource
     private OrderService orderService;
-
-    @Resource
-    private CartService cartService;
-
-    @Resource
-    private Order order;
 
     @ModelAttribute
     public void attachOrderDataForm(Model model) {
@@ -46,7 +38,7 @@ public class OrderPageController {
 
     @RequestMapping(method = RequestMethod.GET)
     public String getOrder(Model model) {
-        order = orderService.createOrder();
+        Order order = orderService.createOrder();
         model.addAttribute(ORDER, order);
         return "order";
     }
@@ -55,32 +47,32 @@ public class OrderPageController {
     public String placeOrder(@ModelAttribute @Valid OrderDataForm orderDataForm,
                              BindingResult result, Model model,
                              RedirectAttributes redirectAttributes) {
+        Order order = orderService.createOrder();
         if (result.hasErrors()) {
             handleErrors(result, model);
             model.addAttribute(ORDER, order);
             return "order";
         }
         try {
-            populateOrder(orderDataForm);
+            populateOrder(order, orderDataForm);
             orderService.placeOrder(order);
-            cartService.clearCart();
             redirectAttributes.addAttribute("secureId", order.getSecureId());
             return "redirect:/orderOverview/{secureId}";
-        } catch (OutOfStockException e) {
-            model.addAttribute(MESSAGE, String.format(OUT_OF_STOCK_ERROR, e.getStockAvailable()));
+        } catch (OutOfStockException | NoSuchFieldException e) {
+            model.addAttribute(MESSAGE, e.getMessage());
             order = orderService.createOrder();
             model.addAttribute(ORDER, order);
             return "order";
         }
     }
 
-    private void populateOrder(OrderDataForm orderDataForm) {
+    private void populateOrder(Order order, OrderDataForm orderDataForm) {
         order.setFirstName(orderDataForm.getFirstName());
         order.setLastName(orderDataForm.getLastName());
         order.setDeliveryAddress(orderDataForm.getDeliveryAddress());
         order.setContactPhoneNo(orderDataForm.getContactPhoneNo());
         order.setAdditionalInformation(orderDataForm.getAdditionalInformation());
-        order.setStatus(OrderStatus.NEW.toString());
+        order.setStatus(OrderStatus.NEW);
     }
 
     private void handleErrors(BindingResult result, Model model) {

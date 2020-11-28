@@ -1,6 +1,6 @@
 package com.es.phoneshop.web.controller.pages;
 
-import com.es.core.model.order.OrderDao;
+import com.es.core.dao.OrderDao;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;

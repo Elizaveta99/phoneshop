@@ -1,4 +1,4 @@
-package com.es.core.cart;
+package com.es.core.model.cart;
 
 import com.es.core.model.phone.Phone;
 

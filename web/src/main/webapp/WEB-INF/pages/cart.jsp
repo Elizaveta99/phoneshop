@@ -88,6 +88,6 @@
         <button>Order</button>
       </p>
     </form:form>
-  <form:form method="delete" id="deleteCartItem" />
+  <form:form method="post" id="deleteCartItem" />
   </p>
 </tags:master>

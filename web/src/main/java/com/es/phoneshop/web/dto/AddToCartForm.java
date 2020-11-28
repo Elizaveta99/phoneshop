@@ -2,14 +2,19 @@ package com.es.phoneshop.web.dto;
 
 import javax.validation.constraints.Pattern;
 
-public class PhoneToCart {
+public class AddToCartForm {
 
     private Long phoneId;
 
     @Pattern(message = "wrong input", regexp="^0*[1-9][0-9]*$")
     private String quantity = "1";
 
-    public PhoneToCart() { }
+    public AddToCartForm() { }
+
+    public AddToCartForm(Long phoneId, @Pattern(message = "wrong input", regexp = "^0*[1-9][0-9]*$") String quantity) {
+        this.phoneId = phoneId;
+        this.quantity = quantity;
+    }
 
     public Long getPhoneId() {
         return phoneId;

@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -30,7 +29,7 @@ public class HttpSessionCartService implements CartService {
         Optional<CartItem> cartItemOptional = getCartItemOptional(cart, phone);
         Long productsAmount = cartItemOptional.map(CartItem::getQuantity).orElse(0L);
 
-        checkQuantity(quantity, productsAmount + quantity, phone);
+        checkQuantity(productsAmount + quantity, phone);
 
         if (cartItemOptional.isPresent()) {
             cartItemOptional.get().setQuantity(productsAmount + quantity);
@@ -46,10 +45,7 @@ public class HttpSessionCartService implements CartService {
                 .findAny();
     }
 
-    private void checkQuantity(Long quantity, Long newQuantity, Phone phone) throws OutOfStockException {
-        if (quantity <= 0) {
-            throw new OutOfStockException(null, quantity, 0L);
-        }
+    private void checkQuantity(Long newQuantity, Phone phone) throws OutOfStockException {
         int stock = phoneDao.getStock(phone.getId());
         if (stock < newQuantity) {
             throw new OutOfStockException(phone, newQuantity, (long)stock);
@@ -66,12 +62,21 @@ public class HttpSessionCartService implements CartService {
     }
 
     @Override
-    public synchronized void update(Map<Long, Long> items) {
-        throw new UnsupportedOperationException("TODO");
+    public synchronized void update(Long phoneId, Long quantity) throws OutOfStockException {
+        Phone phone = phoneDao.get(phoneId);
+        Optional<CartItem> cartItemOptional = getCartItemOptional(cart, phone);
+        checkQuantity(quantity, phone);
+        cartItemOptional.ifPresentOrElse(cartItem -> cartItem.setQuantity(quantity),
+                () -> { throw new ItemNotFoundException(); });
+        recalculateCart(cart);
     }
 
     @Override
     public synchronized void remove(Long phoneId) {
-        throw new UnsupportedOperationException("TODO");
+        Phone product = phoneDao.get(phoneId);
+        Optional<CartItem> cartItemOptional = getCartItemOptional(cart, product);
+        cartItemOptional.ifPresentOrElse(cartItem -> cart.getItems().removeIf(cartItem1 -> phoneId.equals(cartItem1.getPhone().getId())),
+                () -> { throw new ItemNotFoundException(); });
+        recalculateCart(cart);
     }
 }

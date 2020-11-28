@@ -1,7 +1,7 @@
 package com.es.phoneshop.web.controller.pages;
 
 import com.es.core.model.phone.PhoneDao;
-import com.es.phoneshop.web.dto.PhoneToCart;
+import com.es.phoneshop.web.dto.AddToCartForm;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -21,7 +21,7 @@ public class ProductListPageController {
     private static final String SORT = "sort";
     private static final String ORDER = "order";
     private static final String PHONES = "phones";
-    private static final String PHONE_TO_CART = "phoneToCart";
+    private static final String ADD_TO_CART_FORM = "addToCartForm";
     private static final String DEFAULT_QUERY_PRODUCT = "";
     private static final String DEFAULT_SORT = "id";
     private static final String DEFAULT_ORDER = "asc";
@@ -32,8 +32,8 @@ public class ProductListPageController {
     private PhoneDao phoneDao;
 
     @ModelAttribute
-    public void phoneToCart(Model model) {
-        model.addAttribute(PHONE_TO_CART, new PhoneToCart());
+    public void attachAddToCartForm(Model model) {
+        model.addAttribute(ADD_TO_CART_FORM, new AddToCartForm());
     }
 
     @RequestMapping(method = RequestMethod.GET)

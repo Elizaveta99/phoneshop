@@ -28,7 +28,8 @@
       <div class="float-right">
         <br>
         <h6>
-          <a href="${pageContext.servletContext.contextPath}/admin/orders">Admin &nbsp&nbsp</a>
+          admin
+          <a href="${pageContext.servletContext.contextPath}/productList">Logout &nbsp&nbsp</a>
         </h6>
       </div>
       <br>

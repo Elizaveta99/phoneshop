@@ -12,6 +12,10 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -49,6 +53,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public synchronized void placeOrder(Order order) throws OutOfStockException, NoSuchFieldException {
         order.setSecureId(UUID.randomUUID().toString());
+        order.setOrderDate(new Date());
 
         if (order.getOrderItems().isEmpty()) {
             throw new NoSuchFieldException(EMPTY_ORDER_ERROR);

@@ -1,6 +1,7 @@
-package com.es.core.cart;
+package com.es.core.service.cart;
 
 import com.es.core.exception.*;
+import com.es.core.model.cart.Cart;
 
 public interface CartService {
 
@@ -11,4 +12,7 @@ public interface CartService {
     void update(Long phoneId, Long quantity) throws OutOfStockException;
 
     void remove(Long phoneId);
+
+    void clearCart();
 }
+

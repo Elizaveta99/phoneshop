@@ -4,9 +4,13 @@ import com.es.core.model.phone.Phone;
 
 public class OutOfStockException extends Exception{
 
-    private final Phone phone;
-    private final Long stockRequested;
-    private final Long stockAvailable;
+    private Phone phone;
+    private Long stockRequested;
+    private Long stockAvailable;
+
+    public OutOfStockException(String message) {
+        super(message);
+    }
 
     public OutOfStockException(Phone phone, Long stockRequested, Long stockAvailable) {
         this.phone = phone;

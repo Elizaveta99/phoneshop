@@ -1,4 +1,4 @@
-package com.es.core.cart;
+package com.es.core.model.cart;
 
 import java.io.Serializable;
 import java.math.BigDecimal;

@@ -1,6 +1,10 @@
-package com.es.core.model.phone;
+package com.es.core.dao.impl;
 
+import com.es.core.dao.PhoneDao;
 import com.es.core.exception.*;
+import com.es.core.model.phone.Color;
+import com.es.core.model.phone.Phone;
+import com.es.core.util.PhoneResultSetExtractor;
 import org.apache.commons.beanutils.BeanMap;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -21,18 +25,19 @@ public class JdbcPhoneDao implements PhoneDao {
     private static final String SQL_DELETE_COLORS = "delete from phone2color pc where pc.phoneId = :id";
     private static final String SQL_INSERT_COLORS = "insert into phone2color (phoneId, colorId) values (:phoneId, :colorId)";
     private static final String SQL_GET_STOCK = "select s.stock from phones p left join stocks s on p.id = s.phoneId where p.id = :id";
+    private static final String SQL_UPDATE_STOCK = "update stocks set stock = :stock where phoneId = :phoneId";
     private static final String SQL_GET_SEARCH_TEMPLATE = "select p.*, pc.*, c.* from phones p left join stocks s on p.id = s.phoneId left join phone2color pc on p.id = pc.phoneId left join colors c on pc.colorId = c.id where s.stock - s.reserved > 0 and p.model like '%%'||:model||'%%' order by %s %s offset :offset limit :limit";
 
     private NamedParameterJdbcTemplate jdbcTemplate;
-    private Collection<String> attributesList;
+    private Collection<String> attributesPhoneList;
     private PhoneResultSetExtractor phoneResultSetExtractor;
 
     public void setJdbcTemplate(NamedParameterJdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void setAttributesList(Collection<String> attributesList) {
-        this.attributesList = attributesList;
+    public void setAttributesPhoneList(Collection<String> attributesPhoneList) {
+        this.attributesPhoneList = attributesPhoneList;
     }
 
     public void setPhoneResultSetExtractor(PhoneResultSetExtractor phoneResultSetExtractor) {
@@ -55,6 +60,15 @@ public class JdbcPhoneDao implements PhoneDao {
     public int getStock(Long key) {
         SqlParameterSource namedParameters = new MapSqlParameterSource("id", key);
         return jdbcTemplate.queryForObject(SQL_GET_STOCK, namedParameters, Integer.class);
+    }
+
+    @Override
+    public void updateStock(Long key, int stock) {
+        Map<String, Object> namedParametersMap = Map.ofEntries(
+                Map.entry("phoneId", key),
+                Map.entry("stock", stock)
+        );
+        jdbcTemplate.update(SQL_UPDATE_STOCK, namedParametersMap);
     }
 
     @Override
@@ -84,7 +98,7 @@ public class JdbcPhoneDao implements PhoneDao {
     private Map<String, Object> getNamedParametersMapWithoutColors(Phone phone) {
         Map<String,Object> namedParametersMap = new HashMap<>();
         BeanMap beanMapPhone = new BeanMap(phone);
-        for (String key: attributesList) {
+        for (String key: attributesPhoneList) {
             namedParametersMap.put(key, beanMapPhone.get(key));
         }
         return namedParametersMap;

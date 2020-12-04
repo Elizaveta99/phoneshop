@@ -90,17 +90,17 @@
       <tr>
         <th><b>Image</b></th>
         <th><b>Brand</b>
-            <tags:sortLink sort="brand"></tags:sortLink>
+            <tags:sortLink sort="BRAND"></tags:sortLink>
         </th>
         <th><b>Model</b>
-            <tags:sortLink sort="model"></tags:sortLink>
+            <tags:sortLink sort="MODEL"></tags:sortLink>
         </th>
         <th><b>Color</b></th>
         <th><b>Display size</b>
-            <tags:sortLink sort="displaySizeInches"></tags:sortLink>
+            <tags:sortLink sort="DISPLAYSIZEINCHES"></tags:sortLink>
         </th>
         <th><b>Price</b>
-            <tags:sortLink sort="price"></tags:sortLink>
+            <tags:sortLink sort="PRICE"></tags:sortLink>
         </th>
         <th><b>Quantity</b></th>
         <th><b>Action</b></th>

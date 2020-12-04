@@ -1,7 +1,9 @@
 package com.es.core.dao.impl;
 
 import com.es.core.dao.PhoneDao;
-import com.es.core.exception.*;
+import com.es.core.enumeration.sortenum.SortField;
+import com.es.core.enumeration.sortenum.SortOrder;
+import com.es.core.exception.ItemNotFoundException;
 import com.es.core.model.phone.Color;
 import com.es.core.model.phone.Phone;
 import com.es.core.util.PhoneResultSetExtractor;
@@ -105,7 +107,7 @@ public class JdbcPhoneDao implements PhoneDao {
     }
 
     @Override
-    public List<Phone> findAll(int offset, int limit, String queryProduct, String sortField, String sortOrder) {
+    public List<Phone> findAll(int offset, int limit, String queryProduct, SortField sortField, SortOrder sortOrder) {
         Map<String, Object> namedParametersMap = new HashMap<String, Object>() {{
                 put("offset", offset);
                 put("limit", limit);
@@ -114,7 +116,7 @@ public class JdbcPhoneDao implements PhoneDao {
         return jdbcTemplate.query(makeSqlSearchQuery(sortField, sortOrder), namedParametersMap, phoneResultSetExtractor);
     }
 
-    private String makeSqlSearchQuery(String sortField, String sortOrder) {
+    private String makeSqlSearchQuery(SortField sortField, SortOrder sortOrder) {
         return String.format(SQL_GET_SEARCH_TEMPLATE, sortField, sortOrder);
     }
 

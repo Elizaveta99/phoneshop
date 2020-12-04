@@ -29,9 +29,9 @@ public class OrderDetailsPageController {
     }
 
     @RequestMapping(method = RequestMethod.POST, value = "/{secureId}")
-    public String updateStatus(@RequestParam("status") String status, @PathVariable String secureId) {
+    public String updateStatus(@RequestParam("status") OrderStatus status, @PathVariable String secureId) {
         Order order = orderDao.getBySecureId(secureId);
-        orderDao.updateStatus(order.getId(), Optional.of(status).map(OrderStatus::valueOf).orElse(null));
+        orderDao.updateStatus(order.getId(), status);
         return "redirect:/admin/orders/{secureId}";
     }
 }

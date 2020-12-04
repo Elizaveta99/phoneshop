@@ -17,6 +17,7 @@ create table orders (
   contactPhoneNo VARCHAR(20),
   additionalInformation VARCHAR(200),
   status VARCHAR(255) check (status in ('NEW', 'DELIVERED', 'REJECTED')),
+  orderDate TIMESTAMP,
   UNIQUE (secureId)
 );
 

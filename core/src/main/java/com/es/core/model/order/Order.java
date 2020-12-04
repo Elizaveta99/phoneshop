@@ -3,6 +3,7 @@ package com.es.core.model.order;
 import com.es.core.enumeration.OrderStatus;
 
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
 
 public class Order
@@ -31,6 +32,8 @@ public class Order
     private String additionalInformation;
 
     private OrderStatus status;
+
+    private Date orderDate;
 
     public Long getId() {
         return id;
@@ -126,5 +129,13 @@ public class Order
 
     public void setStatus(OrderStatus status) {
         this.status = status;
+    }
+
+    public Date getOrderDate() {
+        return orderDate;
+    }
+
+    public void setOrderDate(Date orderDate) {
+        this.orderDate = orderDate;
     }
 }

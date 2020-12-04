@@ -15,6 +15,8 @@ import java.util.*;
 
 public class HelperExtractorService implements HelperService {
 
+    private final static SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     private HashMap<String, String> phoneAttributesMap;
 
     public void setPhoneAttributesMap(HashMap<String, String> phoneAttributesMap) {
@@ -64,9 +66,10 @@ public class HelperExtractorService implements HelperService {
                 .orElse(BigDecimal.ZERO);
     }
 
-    private static Date getDateValue(ResultSet rs, String column) throws SQLException, NumberFormatException {
+    @Override
+    public Date getDateValue(ResultSet rs, String column) throws SQLException, NumberFormatException {
         try {
-            return rs.getString(column) == null ? null : (new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss")).parse(rs.getString(column));
+            return rs.getString(column) == null ? null : (DATE_FORMAT).parse(rs.getString(column));
         } catch (ParseException e) {
             return null;
         }

@@ -83,6 +83,9 @@ public class OrderResultSetExtractor implements ResultSetExtractor<List<Order>> 
                 case "OrderStatus":
                     PropertyUtils.setProperty(order, key, OrderStatus.valueOf(rs.getString(key)));
                     break;
+                case "Date":
+                    PropertyUtils.setProperty(order, key, helperExtractorService.getDateValue(rs, key));
+                    break;
             }
         }
         order.setOrderItems(new ArrayList<>());

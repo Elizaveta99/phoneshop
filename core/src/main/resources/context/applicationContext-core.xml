@@ -79,6 +79,7 @@
         <entry key="contactPhoneNo" value="String"/>
         <entry key="additionalInformation" value="String"/>
         <entry key="status" value="OrderStatus"/>
+        <entry key="orderDate" value="Date"/>
     </util:map>
 
     <bean id="attributesOrderList" factory-bean="attributesOrderMap" factory-method="keySet"/>

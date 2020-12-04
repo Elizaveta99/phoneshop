@@ -12,14 +12,13 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class JdbcOrderDao implements OrderDao {
 
     private static final String SQL_GET = "select * from orders o left join orderitems oi on o.secureId = oi.orderSecureId left join phones p on oi.phoneId = p.id left join phone2color pc on p.id = pc.phoneId left join colors c on pc.colorId = c.id where o.secureId = :o.secureId";
-    private static final String SQL_INSERT = "insert into orders (secureId, subtotal, deliveryPrice, totalPrice, firstName, lastName, deliveryAddress, contactPhoneNo, additionalInformation, status) values (:secureId, :subtotal, :deliveryPrice, :totalPrice, :firstName, :lastName, :deliveryAddress, :contactPhoneNo, :additionalInformation, :status)";
+    private static final String SQL_GET_ALL = "select * from orders o left join orderitems oi on o.secureId = oi.orderSecureId left join phones p on oi.phoneId = p.id left join phone2color pc on p.id = pc.phoneId left join colors c on pc.colorId = c.id";
+    private static final String SQL_INSERT = "insert into orders (secureId, subtotal, deliveryPrice, totalPrice, firstName, lastName, deliveryAddress, contactPhoneNo, additionalInformation, status, orderDate) values (:secureId, :subtotal, :deliveryPrice, :totalPrice, :firstName, :lastName, :deliveryAddress, :contactPhoneNo, :additionalInformation, :status, :orderDate)";
     private static final String SQL_UPDATE_STATUS = "update orders set status = :status where id = :id";
     private static final String SQL_INSERT_ITEMS = "insert into orderitems (orderSecureId, quantity, phoneId) values (:orderSecureId, :quantity, :phoneId)";
 
@@ -73,6 +72,11 @@ public class JdbcOrderDao implements OrderDao {
                 Map.entry("id", orderId));
 
         jdbcTemplate.update(SQL_UPDATE_STATUS, namedParametersMap);
+    }
+
+    @Override
+    public List<Order> findAll() {
+        return jdbcTemplate.query(SQL_GET_ALL, orderResultSetExtractor);
     }
 
     private Map<String, Object> getNamedParametersMapWithoutItems(Order order) {

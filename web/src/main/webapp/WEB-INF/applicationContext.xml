@@ -9,6 +9,7 @@
         <aop:scoped-proxy/>
     </bean>
 
+    <import resource="webSecurityConfig.xml"/>
     <import resource="classpath:context/applicationContext-core.xml"/>
     <import resource="classpath:context/applicationContext-demoda.xml"/>
 </beans>

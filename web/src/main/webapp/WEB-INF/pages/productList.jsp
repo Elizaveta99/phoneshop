@@ -32,6 +32,9 @@
 
     <script type="text/javascript">
         $(document).ready(function() {
+            var token = $("meta[name='_csrf']").attr("content");
+            var header = $("meta[name='_csrf_header']").attr("content");
+
             $("#phonesTableId").on("click", ".button", function(e){
                 e.preventDefault();
                 var rowId = this.id;
@@ -52,6 +55,7 @@
                     beforeSend: function(xhr) {
                         xhr.setRequestHeader("Accept", "application/json");
                         xhr.setRequestHeader("Content-Type", "application/json");
+                        xhr.setRequestHeader(header, token);
                         $('#messageContainer').html('');
                     },
                     success : function(res) {
@@ -131,7 +135,7 @@
                   <div id="error${phone.id}"></div>
               </td>
               <td>
-                <input type="submit" value="Add to cart" class="button" id="${phone.id}" />
+                  <input type="submit" value="Add to cart" class="button" id="${phone.id}" />
               </td>
             </form:form>
         </tr>

@@ -21,7 +21,7 @@ import java.util.Map;
 public class JdbcPhoneDao implements PhoneDao {
 
     private static final String SQL_GET = "select * from phones p left join phone2color pc on p.id = pc.phoneId left join colors c on pc.colorId = c.id where p.id = :p.id";
-    private static final String SQL_GET_BY_MODEL = "select * from phones p left join phone2color pc on p.id = pc.phoneId left join colors c on pc.colorId = c.id where p.model like '%%'||:model||'%%'";
+    private static final String SQL_GET_BY_MODEL = "select * from phones p left join phone2color pc on p.id = pc.phoneId left join colors c on pc.colorId = c.id where p.model = :model";
     private static final String SQL_INSERT = "insert into phones (id, brand, model, price, displaySizeInches, weightGr, lengthMm, widthMm, heightMm, announced, deviceType, os, displayResolution, pixelDensity, displayTechnology, backCameraMegapixels, frontCameraMegapixels, ramGb, internalStorageGb, batteryCapacityMah, talkTimeHours, standByTimeHours, bluetooth, positioning, imageUrl, description) values (:id, :brand, :model, :price, :displaySizeInches, :weightGr, :lengthMm, :widthMm, :heightMm, :announced, :deviceType, :os, :displayResolution, :pixelDensity, :displayTechnology, :backCameraMegapixels, :frontCameraMegapixels, :ramGb, :internalStorageGb, :batteryCapacityMah, :talkTimeHours, :standByTimeHours, :bluetooth, :positioning, :imageUrl, :description)";
     private static final String SQL_IF_EXIST = "select count(*) from phones where id = :id";
     private static final String SQL_UPDATE = "update phones set brand = :brand, model = :model, price = :price, displaySizeInches = :displaySizeInches, weightGr = :weightGr, lengthMm = :lengthMm, widthMm = :widthMm, heightMm = :heightMm, announced = :announced, deviceType = :deviceType, os = :os, displayResolution = :displayResolution, pixelDensity = :pixelDensity, displayTechnology = :displayTechnology, backCameraMegapixels = :backCameraMegapixels, frontCameraMegapixels = :frontCameraMegapixels, ramGb = :ramGb, internalStorageGb = :internalStorageGb, batteryCapacityMah = :batteryCapacityMah, talkTimeHours = :talkTimeHours, standByTimeHours = :standByTimeHours, bluetooth = :bluetooth, positioning = :positioning, imageUrl = :imageUrl, description = :description where id = :id";
@@ -63,7 +63,7 @@ public class JdbcPhoneDao implements PhoneDao {
     public Phone getByModel(String model) {
         Phone foundPhone;
         try {
-            SqlParameterSource namedParameters = new MapSqlParameterSource("model", model.substring(0, model.length() - 1));
+            SqlParameterSource namedParameters = new MapSqlParameterSource("model", model);
             foundPhone = jdbcTemplate.query(SQL_GET_BY_MODEL, namedParameters, phoneResultSetExtractor).get(0);
         } catch (EmptyResultDataAccessException | IndexOutOfBoundsException e) {
             throw new ItemNotFoundException();
@@ -73,8 +73,12 @@ public class JdbcPhoneDao implements PhoneDao {
 
     @Override
     public int getStock(Long key) {
-        SqlParameterSource namedParameters = new MapSqlParameterSource("id", key);
-        return jdbcTemplate.queryForObject(SQL_GET_STOCK, namedParameters, Integer.class);
+        try {
+            SqlParameterSource namedParameters = new MapSqlParameterSource("id", key);
+            return jdbcTemplate.queryForObject(SQL_GET_STOCK, namedParameters, Integer.class);
+        } catch (EmptyResultDataAccessException | IndexOutOfBoundsException | NullPointerException e) {
+            return 0;
+        }
     }
 
     @Override

@@ -4,8 +4,6 @@ import javax.validation.constraints.Pattern;
 
 public class QuickAddToCartForm {
 
-    private Long phoneId;
-
     private String model = "";
 
     @Pattern(message = "wrong input", regexp="^0*[1-9][0-9]*$")
@@ -13,18 +11,9 @@ public class QuickAddToCartForm {
 
     public QuickAddToCartForm() { }
 
-    public QuickAddToCartForm(Long phoneId, String model, @Pattern(message = "wrong input", regexp = "^0*[1-9][0-9]*$") String quantity) {
-        this.phoneId = phoneId;
+    public QuickAddToCartForm(String model, @Pattern(message = "wrong input", regexp = "^0*[1-9][0-9]*$") String quantity) {
         this.model = model;
         this.quantity = quantity;
-    }
-
-    public Long getPhoneId() {
-        return phoneId;
-    }
-
-    public void setPhoneId(Long id) {
-        this.phoneId = id;
     }
 
     public String getQuantity() {

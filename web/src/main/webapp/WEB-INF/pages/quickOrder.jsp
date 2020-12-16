@@ -26,7 +26,8 @@
     <div class="float-left">
       <button><a href="${pageContext.request.contextPath}/productList">Back to product list</a></button>
       &nbsp
-      <div class="float-right" id="messageContainer">${message}</div>
+      <div class="text-success" >${successMessage}</div>
+      <div class="text-danger">${errorMessage}</div>
     </div>
   </div>
   <br>
@@ -44,18 +45,14 @@
       </thead>
       <c:forEach var="item" items="${multipleQuickAddToCartForm.addToCartFormList}" varStatus="status">
         <tr>
+            <c:set var="num" value="${status.index}"/>
             <td>
-              <input name="addToCartFormList[${status.index}].model" value="${item.model}" />
-              <div class="text-danger">${errors[item.model]}</div>
+              <form:input path="addToCartFormList[${num}].model" />
+              <form:errors path="addToCartFormList[${num}].model" cssClass="error"/>
             </td>
-
             <td>
-              <input type="hidden" name="addToCartFormList[${status.index}].model" value="${item.model}" />
-              <c:set var="error" value="${errors[item.model]}" />
-              <input name="addToCartFormList[${status.index}].quantity" value="${item.quantity}" />
-              <div class="text-danger">${error}</div>
-              <c:set var="key" value="addToCartFormList[${status.index}].model" />
-              <div class="text-danger">${validationErrors[key]}</div>
+              <form:input path="addToCartFormList[${num}].quantity" />
+              <form:errors path="addToCartFormList[${num}].quantity" cssClass="error"/>
             </td>
         </tr>
       </c:forEach>

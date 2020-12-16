@@ -29,8 +29,17 @@ public class HttpSessionCartService implements CartService {
     }
 
     @Override
-    public synchronized void addPhone(Long phoneId, Long quantity) throws OutOfStockException {
-        Phone phone = phoneDao.get(phoneId);
+    public synchronized void addPhone(Long phoneId, Long quantity) throws OutOfStockException, ItemNotFoundException {
+        addToCart(phoneDao.get(phoneId), quantity);
+    }
+
+    @Override
+    public void quickAddPhone(String model, Long quantity) throws OutOfStockException, ItemNotFoundException {
+        Phone phone = phoneDao.getByModel(model);
+        addToCart(phone, quantity);
+    }
+
+    private void addToCart(Phone phone, Long quantity) throws OutOfStockException, ItemNotFoundException {
         Optional<CartItem> cartItemOptional = getCartItemOptional(cart, phone);
         Long productsAmount = cartItemOptional.map(CartItem::getQuantity).orElse(0L);
 
@@ -51,10 +60,13 @@ public class HttpSessionCartService implements CartService {
     }
 
     private void checkQuantity(Long newQuantity, Phone phone) throws OutOfStockException {
-        int stock = phoneDao.getStock(phone.getId());
-        if (stock < newQuantity) {
-            throw new OutOfStockException(phone, newQuantity, (long)stock);
-        }
+        int stock;
+        if (phone.getId() != null) {
+            stock = phoneDao.getStock(phone.getId());
+            if (stock < newQuantity) {
+                throw new OutOfStockException(phone, newQuantity, (long)stock);
+            }
+        } else throw new ItemNotFoundException();
     }
 
     private void recalculateCart(Cart cart) {

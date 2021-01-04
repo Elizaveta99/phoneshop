@@ -7,7 +7,9 @@ public interface CartService {
 
     Cart getCart();
 
-    void addPhone(Long phoneId, Long quantity) throws OutOfStockException;
+    void addPhone(Long phoneId, Long quantity) throws OutOfStockException, ItemNotFoundException;
+
+    void quickAddPhone(String model, Long quantity) throws OutOfStockException, ItemNotFoundException;
 
     void update(Long phoneId, Long quantity) throws OutOfStockException;
 

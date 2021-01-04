@@ -80,6 +80,9 @@
   <div>
     <div id="messageContainer" class="float-left"></div>
       <div class="float-right">
+          <form:form action="${pageContext.servletContext.contextPath}/quickOrder" method="get">
+              <input type="submit" value="Quick order" />
+          </form:form>
         <form>
           <input type="text" name="queryProduct" value="${param.queryProduct}" placeholder="Search by model...">
           <button>Search</button>

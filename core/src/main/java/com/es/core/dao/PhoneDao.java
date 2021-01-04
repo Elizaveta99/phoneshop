@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface PhoneDao {
     Phone get(Long key);
+    Phone getByModel(String model);
     void save(Phone phone);
     List<Phone> findAll(int offset, int limit, String queryProduct, SortField sortField, SortOrder sortOrder);
     int getStock(Long key);
